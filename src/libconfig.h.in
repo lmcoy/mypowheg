@@ -1,0 +1,38 @@
+#ifndef GLOBAL_CONFIG_H_
+#define GLOBAL_CONFIG_H_
+
+#define LIB_LOCAL __attribute__((visibility ("hidden")))
+#define LIB_PUBLIC __attribute__ ((visibility ("default")))
+
+#define ASSERT(condition, statement) {\
+    if(!(condition)) { \
+        statement; \
+        fprintf(stderr, #condition " failed @ " __FILE__ " line: %d\n", __LINE__); \
+    }\
+}
+
+#define LIB_ASSERT(CONDITION, MESSAGE, ...)                                    \
+    {                                                                          \
+        if (!(CONDITION)) {                                                    \
+            fprintf(stderr, "error in %s line %d: " MESSAGE "\n", __FILE__,    \
+                    __LINE__, ##__VA_ARGS__);                                  \
+        }                                                                      \
+        assert(CONDITION);                                                     \
+    }
+
+#define PANIC(MESSAGE, ...)                                                    \
+    {                                                                          \
+        fprintf(stderr, "PANICING! %s line %d: " MESSAGE "\n", __FILE__,       \
+                __LINE__, ##VA_ARGS__);                                        \
+        exit(1);                                                               \
+    }
+    
+// output of git describe --tags --always
+#define GITVERSION "${DY_BUILD_VERSION}"
+
+// output of git diff
+#define GITDIFF "${DY_GIT_DIFF}"
+
+
+
+#endif

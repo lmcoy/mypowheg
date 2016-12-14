@@ -1,0 +1,15 @@
+# files
+set(SOURCEFILES
+    ${SOURCEFILES}
+    ${CMAKE_CURRENT_SOURCE_DIR}/rnd.cpp
+    PARENT_SCOPE
+)
+
+set(HEADERS 
+    ${HEADERS}
+    ${CMAKE_CURRENT_SOURCE_DIR}/rnd.h
+    PARENT_SCOPE
+)
+
+
+

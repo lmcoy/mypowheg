@@ -1,0 +1,27 @@
+LIB=include/libcoli.a
+
+OBJS = \
+  ctoliserg.o\
+  ctolis.o\
+  intstd.o\
+  coli_aux.o\
+  coli_b0.o\
+  coli_c0.o\
+  coli_d0.o\
+  coli_oint.o\
+  coli_d0reg.o
+
+FC = pgf77
+FFLAGS = -O -g
+
+.f.o:
+	$(FC) $(FFLAGS) -c $<
+
+
+
+$(LIB): $(LIB)($(OBJS))
+
+
+cleann:
+	$(RM) $(OBJS) $(LIB)
+

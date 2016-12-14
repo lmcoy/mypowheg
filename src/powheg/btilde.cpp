@@ -1,0 +1,105 @@
+#include <map>
+
+#include "powheg/btilde.h"
+
+#include "phasespace/phasespace.h"
+#include "process/data.h"
+#include "fks/xsec.h"
+
+namespace Powheg {
+
+int Btilde(const Phasespace::Phasespace &ps, double x1, double x2, double x3,
+              double wgt, double *out, UserProcess::Data *params) {
+
+    double result = 0.0;
+    double voverbmax = 0.0;
+    for (size_t i = 0; i < params->Process.size(); i++) {
+        params->ProcessID = i;
+        auto born = FKS::XSecBornByPDF(ps, x1, x2, x3, wgt, params);
+        auto real = FKS::XSecRealByPDF(ps, x1, x2, x3, wgt, params);
+        auto remn = FKS::XSecRemnantByPDF(ps, x1, x2, x3, wgt, params);
+        auto virt = FKS::XSecVirtualByPDF(ps, x1, x2, x3, wgt, params);
+        assert(born.size() == virt.size() && born.size()== remn.size());
+assert(born.size() == real.size() );
+        for(size_t n = 0; n < real.size(); n++) {
+            result += real[n];
+        }
+        for(size_t n = 0; n < born.size(); n++) {
+            result += born[n];
+            result += virt[n];
+            result += remn[n];
+            if (born[n] > 0.0 && virt[n] / born[n] > voverbmax) {
+                voverbmax = virt[n] / born[n];
+            }
+        }
+    }
+    *out = result;
+    if (params->BtildeState.UpdateMax) {
+        double *max = &params->BtildeState.Max;
+        if (*max == 0.0 || (wgt * result > *max && wgt * result < *max * 2.0)) {
+            *max = wgt * result;
+        }
+        if (voverbmax > 0.0 && voverbmax > params->BtildeState.MaxVoverB) {
+            params->BtildeState.MaxVoverB = voverbmax;
+        }
+    }
+
+    return 0;
+}
+
+void Btilde_t::CalcWOVirtual(const Phasespace::Phasespace &ps, double x1,
+                             double x2, double x3, double wgt,
+                             UserProcess::Data *params) {
+    bool negative = false;
+    for (size_t i = 0; i < params->Process.size(); i++) {
+        params->ProcessID = i;
+        auto born = FKS::XSecBornByPDF(ps, x1, x2, x3, wgt, params);
+        auto real = FKS::XSecRealByPDF(ps, x1, x2, x3, wgt, params);
+        auto remn = FKS::XSecRemnantByPDF(ps, x1, x2, x3, wgt, params);
+        for (size_t pdf = 0; pdf < born.size(); pdf++) {
+            double xsec = born[pdf] + real[pdf] + remn[pdf];
+            double F = params->BtildeState.MaxVoverB;
+            double xsec_guessed_v = xsec + born[pdf] * F;
+            if (xsec < 0.0) {
+                // if xsec < 0, xsec_guessed_v could be >0 due to an
+                // overestimated virtual part. 
+                negative = true;
+            }
+            if (xsec != 0.0) {
+                Append(i, pdf, xsec * wgt, xsec_guessed_v * wgt);
+            }
+        }
+    }
+    if (negative) {
+        sum_guessed = -1.0;
+    }
+}
+
+void Btilde_t::CalcVirtual(const Phasespace::Phasespace &ps, double x1,
+                           double x2, double x3, double wgt,
+                           UserProcess::Data *params) {
+    std::map<Meta, double> cache;
+    for (size_t i = 0; i < meta.size(); i++) {
+        auto prev = cache.find(meta[i]);
+        if (prev != cache.end()) {
+            data[i] += prev->second;
+            sum += prev->second;
+            continue;
+        }
+        auto processID = meta[i].first;
+        auto pdfIndex = meta[i].second;
+        params->ProcessID = processID;
+        auto virt = FKS::XSecVirtualByPDF(ps, x1, x2, x3, wgt, params);
+        for (size_t p = 0; p < virt.size(); p++) {
+            if (p == pdfIndex) {
+                data[i] += virt[p] * wgt;
+                sum += virt[p] * wgt;
+            } else {
+                cache[Meta(processID, p)] = virt[p] * wgt;
+            }
+        }
+    }
+    has_virtual = true;
+}
+
+} // end namespace Powheg
