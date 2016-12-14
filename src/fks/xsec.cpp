@@ -39,23 +39,23 @@ struct CutsPassed {
 };
 
 CutsPassed realCuts(const FKS::Phasespaces &PS_recomb_lab,
-                    const Cuts &cuts, int jfks, const int *pdgs_r) {
+                    const UserProcess::ICutsPtr & cuts, int jfks, const int *pdgs_r) {
     CutsPassed results;
 
     results.Real =
-        ApplyCuts(5, pdgs_r, PS_recomb_lab.Real.Momenta.data(), cuts);
+        cuts->ApplyCuts(5, pdgs_r, PS_recomb_lab.Real.Momenta.data());
     results.Collinear1 =
-        ApplyCuts(5, pdgs_r, PS_recomb_lab.Collinear1.Momenta.data(), cuts);
+        cuts->ApplyCuts(5, pdgs_r, PS_recomb_lab.Collinear1.Momenta.data());
 
     results.Collinear2 = false;
     if (jfks == 0) {
         results.Collinear2 =
-            ApplyCuts(5, pdgs_r, PS_recomb_lab.Collinear2.Momenta.data(), cuts);
+            cuts->ApplyCuts(5, pdgs_r, PS_recomb_lab.Collinear2.Momenta.data());
     }
     return results;
 }
 
-typedef std::array<FKS::PartonLuminosity, 5> LumiReal;
+typedef std::array<FKS::PartonLuminosity, FKS::MAXPDF> LumiReal;
 
 /**
  * @brief lumi for the real cross section part
@@ -96,11 +96,12 @@ LumiReal realLuminosity(PDF::Cache *pdf, unsigned long usedpdf,
     return result;
 }
 
-FKS::MatrixElement
-realME(const FKS::Real_t &real, const FKS::Phasespaces &PS,
-       const FKS::Region &region, double x, const FKS::Xi &Xi, double y,
-       double phi, const BornMEOut &bme, const CutsPassed &cutspassed,
-       bool born_passcuts, const UserProcess::Data *userdata) {
+FKS::MatrixElement realME(const FKS::Real_t &real, const FKS::Phasespaces &PS,
+                          const FKS::Region &region, double x,
+                          const FKS::Xi &Xi, double y, double phi,
+                          const UserProcess::IMatrixElement::Result &bme,
+                          const CutsPassed &cutspassed, bool born_passcuts,
+                          const UserProcess::Data *userdata) {
     FKS::MatrixElement ME;
     Util::Matrix2 b(1, 0.0);
     b.SetLen(1);
@@ -249,7 +250,7 @@ void realFillHists(Histograms *hists, const Results &results, double wgt,
     }
 }
 
-typedef std::array<FKS::LumRemnants, 5> LumiRemnants;
+typedef std::array<FKS::LumRemnants, FKS::MAXPDF> LumiRemnants;
 
 /**
  * @brief Luminosity for coll. remnants
@@ -280,7 +281,7 @@ LumiRemnants remnantPDF(PDF::Cache *pdf, unsigned long usedpdf, double x1,
     return lumir;
 }
 
-typedef std::array<double, 5> LumiBorn;
+typedef std::array<double, FKS::MAXPDF> LumiBorn;
 
 class Integrand {
   public:
@@ -288,7 +289,7 @@ class Integrand {
     void Init(const Phasespace::Phasespace &ps, bool Virtual, double wgt,
               UserProcess::Data *userdata);
 
-    bool PSCuts(const Cuts &) const;
+    bool PSCuts(const UserProcess::ICutsPtr &) const;
     Result Born(const Phasespace::Phasespace &ps, const LumiBorn &lumi,
                 Histograms *hists) const;
     Result Virtual(const Phasespace::Phasespace &ps, const LumiBorn &lumi,
@@ -320,7 +321,7 @@ class Integrand {
     int *pdgs_b;
     Phasespace::Phasespace ps_lab;
     mutable PDF::Cache pdf;
-    BornMEOut bme;
+    UserProcess::IMatrixElement::Result bme;
     double wgt;
     FKS::Scales scales;
 };
@@ -364,25 +365,22 @@ void Integrand::Init(const Phasespace::Phasespace &ps, bool Virtual,
     scales.Q2 = scales.mu * scales.mu;
 
     alpha_s = userdata->AlphaS->AlphaS(scales.mu * scales.mu);
-    userdata->Params_as->Set(alpha_s);
+    userdata->Params->SetAlphaS(alpha_s);
 
-    double mu2 = scales.mu * scales.mu;
     // calculate born matrix element
     if (userdata->BornMEStatus != UserProcess::BornMEStatus_t::CrossSection) {
-        InitBornME(userdata->Params, userdata->Params_as, AlphaScheme::Gmu, mu2,
-                   0.0, &userdata->counterterm);
         userdata->BornMEStatus = UserProcess::BornMEStatus_t::CrossSection;
     }
     int id = userdata->Process[proc].Born.ID;
     bool QCD = userdata->Process[proc].QCD & Virtual;
     bool EW = userdata->Process[proc].EW & Virtual;
-    BornME(id, ps, scales.mu, userdata->Params, userdata->Params_as, &bme,
-           QCD, EW, userdata->counterterm);
+    bme = userdata->MatrixElement->Born(id, ps, scales.mu, userdata->Params,
+                                        QCD, EW);
 }
 
-bool Integrand::PSCuts(const Cuts &cuts) const {
+bool Integrand::PSCuts(const  UserProcess::ICutsPtr & cuts) const {
     int N = ps_lab.N + 2;
-    return ApplyCuts(N, pdgs_b, ps_lab.Momenta.data(), cuts);
+    return cuts->ApplyCuts(N, pdgs_b, ps_lab.Momenta.data());
 }
 
 Result Integrand::Born(const Phasespace::Phasespace &ps, const LumiBorn &lumi,
@@ -565,7 +563,6 @@ Result Integrand::real(const Phasespace::Phasespace &ps,
     const UserProcess::RecombinationParam &recomb = userdata->Recomb;
     const int *pdgs_r = rflavour.Flavours.data();
     Histograms *hists = userdata->hists;
-    const Cuts &cuts = *userdata->cuts;
     int jfks = region.J;
     int ifks = region.I;
     assert(ifks == 4);
@@ -586,7 +583,7 @@ Result Integrand::real(const Phasespace::Phasespace &ps,
     FKS::Phasespaces PS;
     PS.Generate(ps, jfks, xi, y, phi);
     auto PS_recomb_lab = PS.Recombined(rflavour.Type, pdgs_r, recomb);
-    CutsPassed cutspassed = realCuts(PS_recomb_lab, cuts, jfks, pdgs_r);
+    CutsPassed cutspassed = realCuts(PS_recomb_lab, userdata->cuts, jfks, pdgs_r);
 
     LumiReal lumi;
     if (born_passcuts || cutspassed.Real || cutspassed.Collinear1 ||
@@ -665,7 +662,7 @@ Result montecarlo_integrand(const Phasespace::Phasespace &ps, double x1,
     Integrand integrand(userdata->pdf);
     integrand.Init(ps, Virtual, wgt, userdata);
 
-    bool born_passcuts = integrand.PSCuts(*userdata->cuts);
+    bool born_passcuts = integrand.PSCuts(userdata->cuts);
 
     if (!Real && !born_passcuts) {
         return result;
@@ -709,6 +706,11 @@ Result montecarlo_integrand(const Phasespace::Phasespace &ps, double x1,
     for (size_t i = 0; i < result.size(); i++) {
         result[i] *= ps.Jacobian;
     }
+    const auto &scale = userdata->Process[userdata->ProcessID].Scales;
+    for (size_t i = 0; i < scale.size(); i++) {
+        result[i] *= scale[i];
+    }
+
     return result;
 }
 

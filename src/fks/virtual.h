@@ -13,7 +13,7 @@ class Matrix2;
 namespace FKS {
 
 // forward declaration
-class Scales;
+struct Scales;
 
 namespace QCD {
 

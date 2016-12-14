@@ -1,13 +1,11 @@
 # files
-set(SOURCEFILES
-    ${SOURCEFILES}
+set(MATH_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/fourmomentum.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/util.cpp
     PARENT_SCOPE
 )
 
-set(HEADERS 
-    ${HEADERS}
+set(MATH_HEADERS 
     ${CMAKE_CURRENT_SOURCE_DIR}/fourmomentum.h
     ${CMAKE_CURRENT_SOURCE_DIR}/util.h
     ${CMAKE_CURRENT_SOURCE_DIR}/dilog.h
@@ -24,6 +22,7 @@ set(test_srcs dilog_test.cpp)
 add_executable(${testname} ${test_srcs})
 target_link_libraries(${testname} ${LIB_NAME} ${LLIB} gtest gtest_main) 
 add_test(${testname} ${testname})
+set_property(TARGET ${testname} PROPERTY FOLDER "mypowheg/tests/math")
 
 # add test util
 set(testname util_test)
@@ -31,6 +30,7 @@ set(test_srcs util_test.cpp)
 add_executable(${testname} ${test_srcs})
 target_link_libraries(${testname} ${LIB_NAME} ${LLIB} gtest gtest_main) 
 add_test(${testname} ${testname})
+set_property(TARGET ${testname} PROPERTY FOLDER "mypowheg/tests/math")
 
 # add test fourmomentum
 set(testname fourmomentum_test)
@@ -38,3 +38,4 @@ set(test_srcs fourmomentum_test.cpp)
 add_executable(${testname} ${test_srcs})
 target_link_libraries(${testname} ${LIB_NAME} ${LLIB} gtest gtest_main) 
 add_test(${testname} ${testname})
+set_property(TARGET ${testname} PROPERTY FOLDER "mypowheg/tests/math")

@@ -13,8 +13,6 @@ template <typename Solver> class PTGenerator {
     double GenPT2(const Solver &solver, double pT2max, double kT2tilde,
                   double ximax, double sb, Random::RNG *rng) const {
         if (pT2min_ >= pT2max) {
-            fprintf(stderr, "%s:%d: pT2min = %g  >= %g = pT2max\n", __FILE__,
-                    __LINE__, pT2min_, pT2max);
             return 0.0;
         }
         double p2 = pT2max;

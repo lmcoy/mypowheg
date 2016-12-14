@@ -23,6 +23,7 @@ gu_mupmumu.h gux_mupmumux.h gdx_mupmumdx.h)
 
 add_library(${LIB_NAME} ${SOURCEFILES} ${HEADERS})
 target_link_libraries(${LIB_NAME} ${LLIBRARIES})
+set_property(TARGET ${LIB_NAME} PROPERTY FOLDER "processes/drell-yan-ew/me")
 
 # find and build tests
 include_directories(${gtest_SOURCE_DIR}/include)
@@ -32,54 +33,63 @@ set(testname uux_mupmuma_test)
   add_executable(ew_${testname} ${test})
   target_link_libraries(ew_${testname} ${LIB_NAME} ${LLIBRARIES} gtest gtest_main) 
   add_test(ew_${testname} ew_${testname})
+  set_property(TARGET ew_${testname} PROPERTY FOLDER "processes/drell-yan-ew/tests")
 
 set(test uux_mupmumg_test.cpp)
 set(testname uux_mupmumg_test)
   add_executable(ew_${testname} ${test})
   target_link_libraries(ew_${testname} ${LIB_NAME} ${LLIBRARIES} gtest gtest_main) 
   add_test(ew_${testname} ew_${testname})
+  set_property(TARGET ew_${testname} PROPERTY FOLDER "processes/drell-yan-ew/tests")
 
 set(test ddx_mupmuma_test.cpp)
 set(testname ddx_mupmuma_test)
   add_executable(ew_${testname} ${test})
   target_link_libraries(ew_${testname} ${LIB_NAME} ${LLIBRARIES} gtest gtest_main) 
   add_test(ew_${testname} ew_${testname})
+  set_property(TARGET ew_${testname} PROPERTY FOLDER "processes/drell-yan-ew/tests")
 
 set(test ddx_mupmumg_test.cpp)
 set(testname ddx_mupmumg_test)
   add_executable(ew_${testname} ${test})
   target_link_libraries(ew_${testname} ${LIB_NAME} ${LLIBRARIES} gtest gtest_main) 
   add_test(ew_${testname} ew_${testname})
+  set_property(TARGET ew_${testname} PROPERTY FOLDER "processes/drell-yan-ew/tests")
 
 set(test gd_mupmumd_test.cpp)
 set(testname gd_mupmumd_test)
   add_executable(ew_${testname} ${test})
   target_link_libraries(ew_${testname} ${LIB_NAME} ${LLIBRARIES} gtest gtest_main) 
   add_test(ew_${testname} ew_${testname})
+  set_property(TARGET ew_${testname} PROPERTY FOLDER "processes/drell-yan-ew/tests")
 
 set(test gu_mupmumu_test.cpp)
 set(testname gu_mupmumu_test)
   add_executable(ew_${testname} ${test})
   target_link_libraries(ew_${testname} ${LIB_NAME} ${LLIBRARIES} gtest gtest_main) 
   add_test(ew_${testname} ew_${testname})
+  set_property(TARGET ew_${testname} PROPERTY FOLDER "processes/drell-yan-ew/tests")
 
 set(test gux_mupmumux_test.cpp)
 set(testname gux_mupmumux_test)
   add_executable(ew_${testname} ${test})
   target_link_libraries(ew_${testname} ${LIB_NAME} ${LLIBRARIES} gtest gtest_main) 
   add_test(ew_${testname} ew_${testname})
+  set_property(TARGET ew_${testname} PROPERTY FOLDER "processes/drell-yan-ew/tests")
 
 set(test gdx_mupmumdx_test.cpp)
 set(testname gdx_mupmumdx_test)
   add_executable(ew_${testname} ${test})
   target_link_libraries(ew_${testname} ${LIB_NAME} ${LLIBRARIES} gtest gtest_main) 
   add_test(ew_${testname} ew_${testname})
+  set_property(TARGET ew_${testname} PROPERTY FOLDER "processes/drell-yan-ew/tests")
 
 set(test virtual_qed_test.cpp)
 set(testname virtual_qed_test)
   add_executable(ew_${testname} ${test})
   target_link_libraries(ew_${testname} ${LIB_NAME} ${LLIBRARIES} gtest gtest_main) 
   add_test(ew_${testname} ew_${testname})
+  set_property(TARGET ew_${testname} PROPERTY FOLDER "processes/drell-yan-ew/tests")
 
 
 

@@ -1,12 +1,10 @@
 # files
-set(SOURCEFILES
-    ${SOURCEFILES}
+set(CONFIG_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/file.cpp
     PARENT_SCOPE
 )
 
-set(HEADERS 
-    ${HEADERS}
+set(CONFIG_HEADERS 
     ${CMAKE_CURRENT_SOURCE_DIR}/file.h
     PARENT_SCOPE
 )
@@ -20,3 +18,4 @@ set(test_srcs file_test.cpp)
 add_executable(${testname} ${test_srcs})
 target_link_libraries(${testname} ${LIB_NAME} ${LLIB} gtest gtest_main) 
 add_test(${testname} ${testname})
+set_property(TARGET ${testname} PROPERTY FOLDER "mypowheg/test/config")

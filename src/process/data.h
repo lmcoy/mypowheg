@@ -13,8 +13,9 @@
 #include "powheg/resonance.h"
 #include "fks/remnants.h"
 #include "physics/alphas.h"
+#include "process/cuts.h"
+#include "process/matrixelement.h"
 
-class Cuts;
 namespace Config {
 class File;
 }
@@ -35,12 +36,6 @@ struct RecombinationParam {
     double dR = 0.1;
 };
 
-struct IntegrationParams {
-    long iterations_setup;
-    long nevents_setup;
-    long iterations;
-    long nevents;
-};
 
 struct GenEventStats {
     int N = 0;
@@ -72,10 +67,6 @@ struct BtildeState_t {
     bool UpdateMax = true;
 };
 
-struct RadiationType_t {
-    bool QCD = false;
-    bool EW = false;
-};
 
 class IScales {
   public:
@@ -91,6 +82,12 @@ enum class BornMEStatus_t {
 };
 
 struct Data {
+    struct {
+        long iterations_setup;
+        long nevents_setup;
+        long iterations;
+        long nevents;
+    } IntParams;
     FKS::ProcessList Process;
     int ProcessID;
     FKS::RadiationRegionList RadiationRegions;
@@ -101,17 +98,18 @@ struct Data {
     double counterterm;
     double SqrtS;
     RecombinationParam Recomb;
-    Histograms *hists;
-    Cuts * cuts;
-    FKS::Param *Params;
-    FKS::Param_as *Params_as;
+    Histograms *hists = 0;
+    ICutsPtr cuts;
+    FKS::Param *Params = 0;
+    FKS::Param_as *Params_as = 0;
     int Seed1;
     int Seed2;
-    IntegrationParams IntParams;
     int NRealXi;
     int NRealY;
     int NRealPhi;
     int NRemnXi;
+
+    IMatrixElementPtr MatrixElement;
 
     struct {
         double kT2min = 0.8; ///< minimal kT2 for radiation
@@ -137,7 +135,16 @@ struct Data {
         int MaxMultiple = 3;
     } Unweighting;
 
-    RadiationType_t RadiationType;
+    struct {
+        /**
+         * @brief Enable/Disable QCD
+         */
+        bool QCD = false;
+        /**
+         * @brief Enable/Disable EW
+         */
+        bool EW = false;
+    } RadiationType;
 
     bool RadiatePhoton = true;
 
@@ -183,6 +190,16 @@ struct Data {
      */
     bool noInterference = false;
 
+    struct {
+        int Ninit = 50000;
+        int N = 100000;
+        /** 
+         * Set Norm of upper bounding function such that the percentage of
+         * smaller values is Ratio. 
+         */
+        double Ratio = 0.995; 
+    } UpperBoundingParams;
+
     PDFRenorm_t PDFRenorm;
 
     Random::RNG rng;
@@ -196,7 +213,7 @@ struct Data {
     EventGen_t GenEvent;
 
     Data();
-    ~Data();
+    virtual ~Data();
     int Init(const char * filename);
     void Reset();
     void Print() const;
@@ -236,10 +253,11 @@ struct Data {
     long int Lhaid = 0;
 
     std::shared_ptr<Physics::IAlphaS> AlphaS;
+protected:
+    virtual int ProcessInit(Config::File &) = 0;
+    virtual void ProcessPrint() const = 0;
 private:
-    int  UserInit(Config::File &);
-    void UserPrint() const;
-    void UserFree();
+    int readConfig(Config::File &);
 };
 
 } // end Process

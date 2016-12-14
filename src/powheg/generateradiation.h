@@ -4,9 +4,9 @@
 #include "libconfig.h"
 
 namespace Phasespace { class Phasespace; }
-namespace FKS { class RadiationRegion; class Real_t; }
-namespace Random { class RNG; }
-namespace UserProcess { class Data; }
+namespace FKS { struct RadiationRegion; struct Real_t; }
+namespace Random { struct RNG; }
+namespace UserProcess { struct Data; }
 
 namespace Powheg {
 

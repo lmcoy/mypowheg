@@ -27,21 +27,6 @@ double xi_from_x1(const Phasespace::Phasespace & ps, int jfks, double x1, double
     return x1 * FKS::XiMaxISR(ps.X1, ps.X2, y);
 }
 
-double Born(int bflv, const Phasespace::Phasespace & ps, UserProcess::Data *userdata) {
-
-    const FKS::Scales &scales = userdata->PowhegScales;
-    if (userdata->BornMEStatus != UserProcess::BornMEStatus_t::CrossSection) {
-        InitBornME(userdata->Params, userdata->Params_as, AlphaScheme::Gmu,
-                   scales.mu * scales.mu, 0.0, &userdata->counterterm);
-        userdata->BornMEStatus = UserProcess::BornMEStatus_t::CrossSection;
-    }
-    BornMEOut bme;
-    BornME(bflv, ps, sqrt(scales.Q2), userdata->Params, userdata->Params_as,
-           &bme, false, false, userdata->counterterm);
-
-    return bme.M2;
-}
-
 } // end namespace
 
 namespace Powheg {
@@ -73,7 +58,7 @@ void GetNormForBoundingFcts(FKS::Type_t type, bool init, FKS::RadiationRegion &r
         alpha = ralphas.SimpleAlphaS(kT2);
         assert(alpha > 0.0);
 
-        userdata->Params_as->Set(alpha);
+        userdata->Params->SetAlphaS(alpha);
         scale = kT;
         if(kT < 3.0) {
             // if the kT is too small, we get problems because the pdfs have
@@ -86,7 +71,7 @@ void GetNormForBoundingFcts(FKS::Type_t type, bool init, FKS::RadiationRegion &r
         }
     } else {
         double as = userdata->pdf->AlphaS(userdata->PowhegScales.mu);
-        userdata->Params_as->Set(as);
+        userdata->Params->SetAlphaS(as);
         alpha = userdata->Params->alpha;
     }
     if (radregion.Region.J < 2) { // ISR
@@ -95,7 +80,10 @@ void GetNormForBoundingFcts(FKS::Type_t type, bool init, FKS::RadiationRegion &r
         U = xi * (1.0 - y) / alpha;
     }
     const auto & fl = radregion.FlavourConfig;
-    double B = Born(fl->Born.ID, ps, userdata);
+    auto bme = userdata->MatrixElement->Born(fl->Born.ID, ps,
+                                             sqrt(userdata->PowhegScales.Q2),
+                                             userdata->Params, false, false);
+    double B = bme.M2;
     double lumi = 0.0;
     const auto &pdgs = fl->Born.PDF;
     for (auto &pdg : pdgs) {
@@ -138,8 +126,6 @@ void GetNormForBoundingFcts(FKS::Type_t type, bool init, FKS::RadiationRegion &r
                 pdf);
             radregion.NormHist[pdf]->AddValue(N, 1.0);
         } else {
-            // TODO: add option in userdata to set these values
-            N *= 2;
             radregion.InitHist[pdf]->AddValue(N, 1.0);
         }
     }

@@ -9,8 +9,8 @@
 #include "util/staticmatrix.h"
 
 namespace Phasespace { class Phasespace; }
-namespace UserProcess { class Data; }
-namespace FKS { class PDF; class RadiationRegion; }
+namespace UserProcess { struct Data; }
+namespace FKS { class PDF; struct RadiationRegion; }
 
 namespace Powheg {
 

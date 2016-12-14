@@ -10,14 +10,6 @@
 
 namespace {
 
-static const double a = 1.0;
-static const double b = 1.0;
-
-double h(double z, double c) {
-    double t = pow(1.0-z,c);
-    return t/( pow(z,c) + t);
-}
-
 double Energy(const Math::FourMomentum &initial1, const Math::FourMomentum initial2,
           const Math::FourMomentum &ki, double sqrts) {
     Math::FourMomentum q = initial1.Plus(initial2);
@@ -68,14 +60,6 @@ double dij(const Math::FourMomentum &initial1,
         return 0.0;
     }
     return ret;
-}
-
-double Charge(const FKS::Region &region, const FKS::Real_t &real) {
-    double Q = Physics::PDG::Charge(real.Flavours[region.J]);
-    if (Q != 0.0) {
-        return Q;
-    }
-    return Physics::PDG::Charge(real.Flavours[region.I]);
 }
 
 } // namespace

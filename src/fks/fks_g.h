@@ -19,10 +19,10 @@ namespace FKS {
 
 class Param;
 class Param_as;
-class Xi;
+struct Xi;
 struct Real_t;
 struct Region;
-class MatrixElement;
+struct MatrixElement;
 struct Phasespaces;
 
 namespace QED {

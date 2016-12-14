@@ -12,3 +12,4 @@ set (CMAKE_Fortran_FLAGS ${CMAKE_Fortran_FLAGS} "-O2 -ffixed-line-length-200 -xf
 
 add_library(ew_virtqed ${EW_VirtSrc})
 target_link_libraries(ew_virtqed loop)
+set_property(TARGET ew_virtqed PROPERTY FOLDER "processes/drell-yan-ew/me/VirtualQED")

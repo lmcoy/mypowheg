@@ -23,7 +23,7 @@
 #include "lhe/lhefile.h"
 #include "util/stringutil.h"
 
-#include "processes.h"
+#include "zdata.h"
 #include "config.h"
 #include "processlist.h"
 #include "process/data.h"
@@ -52,7 +52,8 @@ static int integrand3(int n, const double *x, const double wgt, void *params,
     UserProcess::Data *userdata = (UserProcess::Data *)params;
     // implement mll cut in Breit-Wigner trafo.
     // can be set to 0.0 for small cut values (mll < ~100).
-    double Mll = userdata->cuts->mllmin;
+    auto cuts = std::static_pointer_cast<DrellYanCuts>(userdata->cuts);
+    double Mll = cuts->mllmin;
     double S = userdata->SqrtS * userdata->SqrtS;
     double Delta =
         atan((S - M * M) / (M * G)) - atan((Mll * Mll - M * M) / (M * G));
@@ -522,30 +523,28 @@ int main(int argc, char *argv[]) {
     /*********************************************************************
      *                          set up process                           *
      *********************************************************************/
-    UserProcess::Data userdata;
-    if (userdata.Init("config.txt") != 0) {
+    auto userdata = std::shared_ptr<ZData>(new ZData);
+    if (userdata->Init("config.txt") != 0) {
         fail(1);
     }
 
     if (rank == 0) {
         std::cout << "Radiation: ";
-        if (userdata.RadiationType.QCD) {
+        if (userdata->RadiationType.QCD) {
             std::cout << "QCD";
-            if (userdata.RadiationType.EW) {
+            if (userdata->RadiationType.EW) {
                 std::cout << ", ";
             }
         }
-        if (userdata.RadiationType.EW) {
+        if (userdata->RadiationType.EW) {
             std::cout << "EW";
         }
         std::cout << "\n";
     }
-    userdata.Process = GenerateProcesses(userdata.RadiationType.QCD,
-                                         userdata.RadiationType.EW);
 
-    userdata.RadiationRegions = FKS::FindRadiationRegions( userdata.Process );
+    userdata->RadiationRegions = FKS::FindRadiationRegions(userdata->Process);
     if (rank == 0) {
-        for (const auto &r : userdata.RadiationRegions) {
+        for (const auto &r : userdata->RadiationRegions) {
             std::cout << "{ fb = " << Physics::PDG::CodesToName(
                                           r.FlavourConfig->Born.Flavours)
                       << ", region = (" << r.Region.I << ", " << r.Region.J
@@ -558,19 +557,19 @@ int main(int argc, char *argv[]) {
     }
 
     // add Z resonance
-    userdata.ResonanceISR.pdg = 23;
-    userdata.ResonanceISR.ID[0] = 2;
-    userdata.ResonanceISR.ID[1] = 3;
+    userdata->ResonanceISR.pdg = 23;
+    userdata->ResonanceISR.ID[0] = 2;
+    userdata->ResonanceISR.ID[1] = 3;
 
-    userdata.ResonanceFSR.pdg = 23;
-    userdata.ResonanceFSR.ID[0] = 2;
-    userdata.ResonanceFSR.ID[1] = 3;
-    userdata.ResonanceFSR.ID[2] = 4;
+    userdata->ResonanceFSR.pdg = 23;
+    userdata->ResonanceFSR.ID[0] = 2;
+    userdata->ResonanceFSR.ID[1] = 3;
+    userdata->ResonanceFSR.ID[2] = 4;
 
     // init pdfs
     std::shared_ptr<PDF::Lhapdf> lhapdf(new PDF::Lhapdf);
-    lhapdf->InitByLHAID(userdata.Lhaid);
-    userdata.pdf = lhapdf;
+    lhapdf->InitByLHAID(userdata->Lhaid);
+    userdata->pdf = lhapdf;
 
     double as_at_mz = lhapdf->AlphaS(91.1876);
     int as_o = lhapdf->GetOrderAlphaS();
@@ -586,17 +585,17 @@ int main(int argc, char *argv[]) {
         as_order = Physics::AlphaSRunning::AlphaSOrder::LO;
         fail(1);
     }
-    userdata.AlphaS = std::shared_ptr<Physics::IAlphaS>(
+    userdata->AlphaS = std::shared_ptr<Physics::IAlphaS>(
         new Physics::AlphaSRunning(as_at_mz, as_order, 5));
 
-    lhapdf->SetThresholdC(sqrt(userdata.AlphaS->ThresholdC2()));
-    lhapdf->SetThresholdB(sqrt(userdata.AlphaS->ThresholdB2()));
+    lhapdf->SetThresholdC(sqrt(userdata->AlphaS->ThresholdC2()));
+    lhapdf->SetThresholdB(sqrt(userdata->AlphaS->ThresholdB2()));
 
     if (rank == 0) {
-        userdata.Print();
+        userdata->Print();
     }
 
-    hists.Init(userdata.hists);
+    hists.Init(userdata->hists);
 
     Run run;
     if (load_previous) {
@@ -611,7 +610,7 @@ int main(int argc, char *argv[]) {
         }
         run.Number += 1;
         int i = 0;
-        for (auto &r : userdata.RadiationRegions) {
+        for (auto &r : userdata->RadiationRegions) {
             if (rank == 0) {
                 std::cout << Physics::PDG::CodesToName(
                                  r.FlavourConfig->Born.Flavours) << ": ";
@@ -655,7 +654,7 @@ int main(int argc, char *argv[]) {
 
         vegas_integrate(state, 0, initfindnorm, (void *)&userdata, 1, 50000, 1,
                         1, &integral, &error, &prob);
-        for (auto &r : userdata.RadiationRegions) {
+        for (auto &r : userdata->RadiationRegions) {
             if (rank == 0) {
                 for (int i = 1; i < num_procs; i++) {
                     MPI_Status status;
@@ -702,7 +701,7 @@ int main(int argc, char *argv[]) {
         if (rank == 0) {
             std::cout << "  ---- generating histograms ----\n";
         }
-        vegas_integrate(state, 0, findnorm, (void *)&userdata, 1, 100000, 1, 1,
+        vegas_integrate(state, 0, findnorm, (void *)userdata.get(), 1, 100000, 1, 1,
                         &integral, &error, &prob);
         vegas_free(state);
 
@@ -712,7 +711,7 @@ int main(int argc, char *argv[]) {
             norm_out.close();
             std::cout << "  ---- setting norms ----\n";
         }
-        for (auto &r : userdata.RadiationRegions) {
+        for (auto &r : userdata->RadiationRegions) {
             if (rank == 0) {
                 for (int i = 1; i < num_procs; i++) {
                     MPI_Status status;
@@ -723,7 +722,7 @@ int main(int argc, char *argv[]) {
                              MPI_COMM_WORLD, &status);
                     r.MergeNormHistBinaryFromBuffer(&buffer);
                 }
-                r.ComputeNorm();
+                r.ComputeNorm(userdata->UpperBoundingParams.Ratio);
                 fprintf(stderr, "new born = %s, i=%d, j=%d, N=%g, %g\n",
                         Physics::PDG::CodesToName(
                             r.FlavourConfig->Born.Flavours).c_str(),
@@ -748,7 +747,7 @@ int main(int argc, char *argv[]) {
     }
 
     IntegrationResult result;
-    e = IntegrateProcess(rank, 0, 0, load_previous, &userdata, &result, &hists,
+    e = IntegrateProcess(rank, 0, 0, load_previous, userdata.get(), &result, &hists,
                          run);
 
     if (e != 0) {

@@ -184,7 +184,7 @@ double CollinearLimitISR(const int *realpdgs, const int *bornpdgs, double xi,
     int realpdg = 0xffffff;
     int bornpdg = 0xffffff;
 
-    bool has_singularity = get_splitting_ISR_QCD(bornpdgs, realpdgs, &bornpdg, &realpdg, y);
+    bool has_singularity = get_splitting_ISR_QED(bornpdgs, realpdgs, &bornpdg, &realpdg, y);
 
     if (!has_singularity) {
         // If the real matrix element has no singularity in y == +1 or y == -1,
@@ -283,7 +283,7 @@ double SoftCollinearLimitISR(const int *realpdgs, const int *bornpdgs, int y,
     int realpdg = 0xffffff;
     int bornpdg = 0xffffff;
 
-    bool has_singularity = get_splitting_ISR_QCD(bornpdgs, realpdgs, &bornpdg, &realpdg, y);
+    bool has_singularity = get_splitting_ISR_QED(bornpdgs, realpdgs, &bornpdg, &realpdg, y);
 
     if (!has_singularity) {
         // If the real matrix element has no singularity in y == +1 or y == -1,

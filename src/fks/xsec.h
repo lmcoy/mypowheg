@@ -15,7 +15,8 @@ class Phasespace;
 
 namespace FKS {
 
-typedef std::array<double, 5> Result;
+constexpr size_t MAXPDF = 6;
+typedef std::array<double, MAXPDF> Result;
 
 /**
  * @brief XSecFullByPDF returns the cross section integrand.

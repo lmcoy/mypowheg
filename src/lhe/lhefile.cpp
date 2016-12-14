@@ -26,19 +26,16 @@ int File::WriteHeader(std::istream &input, bool xml) {
     std::string end_tag;
     std::string git_start;
     std::string git_end;
-    switch (xml) {
-    case true:
+    if (xml) {
         start_tag = "<header>";
         end_tag = "</header>";
-	git_start = "<git>";
-	git_end = "</git>";
-        break;
-    case false:
+        git_start = "<git>";
+        git_end = "</git>";
+    } else {
         start_tag = "<!--";
         end_tag = "-->";
-	git_start = "Git:";
-	git_end = "Git End";
-        break;
+        git_start = "Git:";
+        git_end = "Git End";
     }
     output_ << start_tag << "\n";
     for (std::string line; std::getline(input, line);) {

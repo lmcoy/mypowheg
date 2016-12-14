@@ -10,7 +10,7 @@
 #include "powheg/pickelement.h"
 
 namespace UserProcess {
-class Data;
+struct Data;
 }
 
 namespace Phasespace {

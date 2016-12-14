@@ -6,3 +6,5 @@ set (CMAKE_Fortran_FLAGS_DEBUG ${CMAKE_Fortran_FLAGS} "-g")
 set (CMAKE_Fortran_FLAGS "-O2")
 
 add_library(loop ${SOURCE} ${HEADER})
+
+set_property(TARGET loop PROPERTY FOLDER "external")

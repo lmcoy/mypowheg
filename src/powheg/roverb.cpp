@@ -194,7 +194,7 @@ std::array<double, 8> RoverB(double B, const FKS::RadiationRegion &radreg,
         alpha = userdata->Params->alpha;
         break;
     case FKS::Type_t::QCD:
-        alpha = userdata->Params_as->aS;
+        alpha = userdata->Params->alphaS();
         break;
     }
 
@@ -214,15 +214,16 @@ std::array<double, 8> RoverB(double B, const FKS::RadiationRegion &radreg,
         double R_isr = 0.0;
         double R_fsr = 0.0;
         if (mod || nointer) {
-            R_isr = RealME(rflavour, ps_real, userdata->Params,
-                           userdata->Params_as, Diagrams::ONLYISR);
-            R_fsr = RealME(rflavour, ps_real, userdata->Params,
-                           userdata->Params_as, Diagrams::ONLYFSR);
+            using Diag = UserProcess::IMatrixElement::Diagrams;
+            R_isr = userdata->MatrixElement->Real(
+                rflavour, ps_real, userdata->Params, Diag::ONLYISR);
+            R_fsr = userdata->MatrixElement->Real(
+                rflavour, ps_real, userdata->Params, Diag::ONLYFSR);
         }
         double R_int = 0.0;
         if (!nointer) {
-            double R = RealME(rflavour, ps_real, userdata->Params,
-                              userdata->Params_as);
+            double R = userdata->MatrixElement->Real(rflavour, ps_real,
+                                                     userdata->Params);
             R_int = R - R_isr - R_fsr;
         }
 

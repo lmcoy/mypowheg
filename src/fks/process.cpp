@@ -89,11 +89,20 @@ void FlavourConfig::Print() const {
 }
 
 FlavourConfig::FlavourConfig(int id, const PDGList &pdgs,
-                             const std::vector<int> &pdfs) {
+                             const std::vector<int> &pdfs,
+                             const std::vector<double> &scales) {
     Born.ID = id;
     Born.Flavours = pdgs;
+    Born.PDF.reserve(pdfs.size() / 2);
     for (size_t i = 0; i < pdfs.size(); i += 2) {
         Born.PDF.push_back({ { pdfs[i], pdfs[i + 1] } });
+    }
+    if( scales.size() == 0 ) {
+        Scales = std::vector<double>(Born.PDF.size(), 1.0);
+    } else {
+        assert(Born.PDF.size() == scales.size() &&
+               "need a scale for every pdf");
+        Scales = scales;
     }
 }
 

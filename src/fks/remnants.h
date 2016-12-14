@@ -6,8 +6,8 @@
 namespace FKS {
 
 // forward declarations
-class Scales;
-class LumRemnants;
+struct Scales;
+struct LumRemnants;
 
 enum class PDFRenorm {
     MSbar,

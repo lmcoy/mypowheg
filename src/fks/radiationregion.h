@@ -16,13 +16,13 @@ class DataBuffer;
 namespace FKS {
 
 struct RadiationRegion {
-    static const size_t NPDF = 3;
+    static const size_t NPDF = 6;
     RadiationRegion(const FKS::FlavourConfig *fl);
     ~RadiationRegion();
 
     bool CreateHistograms(int Nbins);
 
-    void ComputeNorm();
+    void ComputeNorm(double);
 
     bool WriteNormHistBinaryToBuffer(Util::DataBuffer *buffer) const;
     bool MergeNormHistBinaryFromBuffer(Util::DataBuffer *buffer);

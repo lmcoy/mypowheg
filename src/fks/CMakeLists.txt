@@ -1,6 +1,5 @@
 # files
-set(SOURCEFILES
-    ${SOURCEFILES}
+set(FKS_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/limits.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/luminosity.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/remnants.cpp
@@ -17,12 +16,10 @@ set(SOURCEFILES
     PARENT_SCOPE
 )
 
-set(HEADERS 
-    ${HEADERS}
+set(FKS_HEADERS 
     ${CMAKE_CURRENT_SOURCE_DIR}/limits.h
     ${CMAKE_CURRENT_SOURCE_DIR}/luminosity.h
     ${CMAKE_CURRENT_SOURCE_DIR}/color.h 
-    ${CMAKE_CURRENT_SOURCE_DIR}/pdf.h.h
     ${CMAKE_CURRENT_SOURCE_DIR}/regions.h
     ${CMAKE_CURRENT_SOURCE_DIR}/process.h
     ${CMAKE_CURRENT_SOURCE_DIR}/remnants.h
@@ -46,22 +43,26 @@ set(test limits_test.cpp)
 add_executable(${testname} ${test})
 target_link_libraries(${testname} ${LIB_NAME} ${LLIBRARIES} gtest gtest_main) 
 add_test(${testname} ${testname})
+set_property(TARGET ${testname} PROPERTY FOLDER "mypowheg/tests/fks")
 
 set(testname sfunctions_test)
 set(test sfunctions_test.cpp)
 add_executable(${testname} ${test})
 target_link_libraries(${testname} ${LIB_NAME} ${LLIBRARIES} gtest gtest_main) 
 add_test(${testname} ${testname})
+set_property(TARGET ${testname} PROPERTY FOLDER "mypowheg/tests/fks")
 
 set(testname virtual_test)
 set(test virtual_test.cpp)
 add_executable(${testname} ${test})
 target_link_libraries(${testname} ${LIB_NAME} ${LLIBRARIES} gtest gtest_main) 
 add_test(${testname} ${testname})
+set_property(TARGET ${testname} PROPERTY FOLDER "mypowheg/tests/fks")
 
 set(testname ximax_test)
 set(test ximax_test.cpp)
 add_executable(${testname} ${test})
 target_link_libraries(${testname} ${LIB_NAME} ${LLIBRARIES} gtest gtest_main) 
 add_test(${testname} ${testname})
+set_property(TARGET ${testname} PROPERTY FOLDER "mypowheg/tests/fks")
 

@@ -28,7 +28,7 @@ static int findNorm(bool search_bmax,
     for (auto & radreg : userdata->RadiationRegions) {
         const int * pdgs = radreg.FlavourConfig->Born.Flavours.data();
         bool passcuts =
-            ApplyCuts(ps.N + 2, pdgs, ps_lab.Momenta.data(), *userdata->cuts);
+            userdata->cuts->ApplyCuts(ps.N + 2, pdgs, ps_lab.Momenta.data());
         if (!passcuts) {
             failed_cuts += 1;
             continue;
@@ -39,7 +39,8 @@ static int findNorm(bool search_bmax,
 
     }
     *result = 0.0;
-    if (failed_cuts >= userdata->RadiationRegions.size() / 2) {
+    auto s = userdata->RadiationRegions.size();
+    if (s > 1 && failed_cuts >= s / 2) {
         // if we sample too many events that don't pass cuts, we have only very
         // few events in our Norm histograms. Therefore, we draw an additional
         // phase space point when cuts were not passed for too many radiation

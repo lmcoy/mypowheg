@@ -11,6 +11,8 @@ set( CMAKE_EXPORT_COMPILE_COMMANDS 1 )
 
 option(USE_GTEST "enable unit tests" ON)
 
+set_property(GLOBAL PROPERTY USE_FOLDERS ON)
+
 # get info from git repo
 if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/.git)
   find_package(Git)
@@ -89,6 +91,7 @@ add_subdirectory(external/aloha_cm)
 add_subdirectory(external/LoopLib)
 add_subdirectory(vegas)
 add_subdirectory(src)
+add_subdirectory(powheggen)
 add_subdirectory(processes)
 
 

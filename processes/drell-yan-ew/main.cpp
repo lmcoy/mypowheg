@@ -17,11 +17,11 @@
 #include "math/math.h"
 #include "fks/xsec.h"
 
-#include "processes.h"
 #include "config.h"
 #include "processlist.h"
 #include "process/data.h"
 #include "genbornps.h"
+#include "zdata.h"
 
 typedef int (*function)(const Phasespace::Phasespace &, double, double, double,
                         double, double *, UserProcess::Data *);
@@ -281,35 +281,33 @@ int main(int argc, char *argv[]) {
     /*********************************************************************
      *                          set up process                           *
      *********************************************************************/
-    UserProcess::Data userdata;
+    auto userdata = std::shared_ptr<ZData>(new ZData);
     ProcessList plist;
     int e = ReadProcessFile(&plist, "processes.txt");
     if (e != 0) {
         fail(1);
     }
-    if (userdata.Init("config.txt") != 0) {
+    if (userdata->Init("config.txt") != 0) {
         fail(1);
     }
 
     if (rank == 0) {
         std::cout << "Radiation: ";
-        if (userdata.RadiationType.QCD) {
+        if (userdata->RadiationType.QCD) {
             std::cout << "QCD";
-            if (userdata.RadiationType.EW) {
+            if (userdata->RadiationType.EW) {
                 std::cout << ", ";
             }
         }
-        if (userdata.RadiationType.EW) {
+        if (userdata->RadiationType.EW) {
             std::cout << "EW";
         }
         std::cout << "\n";
     }
-    userdata.Process = GenerateProcesses(userdata.RadiationType.QCD,
-                                         userdata.RadiationType.EW);
 
     std::shared_ptr<PDF::Lhapdf> lhapdf(new PDF::Lhapdf);
-    lhapdf->InitByLHAID(userdata.Lhaid);
-    userdata.pdf = lhapdf;
+    lhapdf->InitByLHAID(userdata->Lhaid);
+    userdata->pdf = lhapdf;
 
     double as_at_mz = lhapdf->AlphaS(91.1876);
     int as_o = lhapdf->GetOrderAlphaS();
@@ -325,11 +323,11 @@ int main(int argc, char *argv[]) {
         as_order = Physics::AlphaSRunning::AlphaSOrder::LO;
         fail(1);
     }
-    userdata.AlphaS = std::shared_ptr<Physics::IAlphaS>(
+    userdata->AlphaS = std::shared_ptr<Physics::IAlphaS>(
         new Physics::AlphaSRunning(as_at_mz, as_order, 5));
 
     if (rank == 0) {
-        userdata.Print();
+        userdata->Print();
         // init output file
         res_out.open("results.txt", std::ios::out);
         res_out.close();
@@ -342,7 +340,7 @@ int main(int argc, char *argv[]) {
     sigma_2_nlo_qcd = 0.0;
     I_nlo_qed = 0.0;
     sigma_2_nlo_qed = 0.0;
-    hists.Init(userdata.hists);
+    hists.Init(userdata->hists);
     previous_proc_id = -1;
     for (auto &proc : plist) {
         if (rank == 0) {
@@ -357,7 +355,7 @@ int main(int argc, char *argv[]) {
         if (previous_proc_id == proc.Id) {
             print_proc = false;
         }
-        e = IntegrateProcess(rank, proc.Id, proc.Type, print_proc, &userdata, &result, &hists);
+        e = IntegrateProcess(rank, proc.Id, proc.Type, print_proc, userdata.get(), &result, &hists);
         if (proc.Type == "b") {
             I_lo += result.I;
             sigma_2_lo += result.sigma * result.sigma;

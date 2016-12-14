@@ -7,14 +7,12 @@ class Param {
   public:
     virtual ~Param() {}
     virtual double Mass(int pdg) const = 0;
-    double alpha;
-};
 
-class Param_as {
-  public:
-    virtual ~Param_as() {}
-    virtual void Set(double as) = 0;
-    double aS;
+    virtual void SetAlphaS(double as) = 0;
+
+    virtual double alphaS() const = 0;
+
+    double alpha;
 };
 
 } // namespace FKS

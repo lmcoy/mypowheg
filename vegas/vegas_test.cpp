@@ -124,6 +124,7 @@ TEST(VEGAS, F1) {
 
     struct VegasState *state = vegas_new(5, 50);
     vegas_set_random(state, init_rnd, NULL, get_rnd, free_rnd);
+    vegas_seed_random(state, seed1);
 
     vegas_integrate(state, seed1, f1, NULL, 6, ncall, itmx, verbosity, &tgral,
                     &sd, &chi2a);
@@ -152,6 +153,7 @@ TEST(VEGAS, F2) {
 
     struct VegasState *state = vegas_new(8, 50);
     vegas_set_random(state, init_rnd, NULL, get_rnd, free_rnd);
+    vegas_seed_random(state, seed1);
 
     // setup grid
     vegas_integrate(state, seed1, f2, NULL, 6, 10000, 5, verbosity, &tgral, &sd,
@@ -181,6 +183,7 @@ TEST(VEGAS, F3) {
 
     struct VegasState *state = vegas_new(2, 50);
     vegas_set_random(state, init_rnd, NULL, get_rnd, free_rnd);
+    vegas_seed_random(state, seed1);
 
     // setup grid
     vegas_integrate(state, seed1, f3, NULL, 6, 10000, 5, verbosity, &tgral, &sd,
@@ -210,6 +213,7 @@ TEST(VEGAS, F4) {
 
     struct VegasState *state = vegas_new(2, 50);
     vegas_set_random(state, init_rnd, NULL, get_rnd, free_rnd);
+    vegas_seed_random(state, seed1);
 
     // setup grid
     vegas_integrate(state, seed1, f4, NULL, 6, 10000, 5, verbosity, &tgral, &sd,
@@ -261,6 +265,7 @@ TEST(VEGAS, F5) {
 
     struct VegasState *state = vegas_new(2, 50);
     vegas_set_random(state, init_rnd, NULL, get_rnd, free_rnd);
+    vegas_seed_random(state, seed1);
 
     // setup grid
     vegas_integrate(state, seed1, f5, (void*)&ud, 6, 10000, 5, verbosity, &tgral, &sd,
@@ -295,6 +300,7 @@ TEST(VEGAS, F6) {
 
     struct VegasState *state = vegas_new(2, 50);
     vegas_set_random(state, init_rnd, NULL, get_rnd, free_rnd);
+    vegas_seed_random(state, seed1);
 
     // setup grid
     vegas_integrate(state, seed1, f6, NULL, 6, 10000, 5, verbosity, &tgral, &sd,

@@ -4,15 +4,15 @@
 #include "libconfig.h"
 
 namespace LHE {
-class Event;
+struct Event;
 }
 namespace UserProcess {
-class Data;
+struct Data;
 }
 
 namespace Powheg {
 
-class Resonance;
+struct Resonance;
 
 void LIB_LOCAL reshuffle_momenta(LHE::Event *event,
                                  const Powheg::Resonance &resonance,

@@ -1,0 +1,43 @@
+# Compiled Object files
+*.slo
+*.lo
+*.o
+*.obj
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+*.lib
+
+# Executables
+*.exe
+*.out
+*.app
+ 
+# compiled files
+build
+# doxygen html output
+doc/html
+
+# ignore cuba
+external/Cuba-3.3/*
+
+# backup files
+*.bak
+*.bak2
+*.old
+*~
+
+*.orig
+
+# dolphin files
+.directory
+
+# compiled python files
+*.pyc

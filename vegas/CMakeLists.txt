@@ -22,6 +22,6 @@ set(test_srcs vegas_test.cpp)
 add_executable(${testname} ${test_srcs})
 set_target_properties(${testname} PROPERTIES COMPILE_FLAGS "${MPI_CXX_COMPILE_FLAGS}")
 target_link_libraries(${testname} ${LIB_NAME} ${MPI_CXX_LIBRARIES} gtest gtest_main) 
-add_test(NAME "${testname} 1 procs" COMMAND ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 1 ${MPIEXEC_PREFLAGS} ${testname} ${MPIEXEC_POSTFLAGS})
-add_test(NAME "${testname} 4 procs" COMMAND ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 4 ${MPIEXEC_PREFLAGS} ${testname} ${MPIEXEC_POSTFLAGS})
+add_test(NAME "${testname}_1procs" COMMAND ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 1 ${MPIEXEC_PREFLAGS} ${testname} ${MPIEXEC_POSTFLAGS})
+add_test(NAME "${testname}_4procs" COMMAND ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 4 ${MPIEXEC_PREFLAGS} ${testname} ${MPIEXEC_POSTFLAGS})
 

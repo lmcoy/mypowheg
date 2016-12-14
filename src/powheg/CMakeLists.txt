@@ -1,6 +1,5 @@
 # files
-set(SOURCEFILES
-    ${SOURCEFILES}
+set(POWHEG_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/roverb.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/upperbounding.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/pickelement.cpp
@@ -12,8 +11,7 @@ set(SOURCEFILES
     PARENT_SCOPE
 )
 
-set(HEADERS 
-    ${HEADERS}
+set(POWHEG_HEADERS 
     ${CMAKE_CURRENT_SOURCE_DIR}/roverb.h
     ${CMAKE_CURRENT_SOURCE_DIR}/upperbounding.h
     ${CMAKE_CURRENT_SOURCE_DIR}/pickelement.h

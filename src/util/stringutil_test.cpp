@@ -226,7 +226,7 @@ TEST(ParseDouble, Numbers) {
 
 TEST(ParseDouble, NotANumber) {
     double d = -1.0;
-    EXPECT_EQ(Strings::ParseDouble("hallo", &d), 0);
+    EXPECT_EQ(Strings::ParseDouble("hallo", &d), -3);
     EXPECT_DOUBLE_EQ(d, 0.0);
 }
 

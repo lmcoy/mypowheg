@@ -25,23 +25,6 @@
 namespace Powheg {
 
 namespace {
-double Born(int bflv, const Phasespace::Phasespace &ps,
-            UserProcess::Data *userdata) {
-
-    const FKS::Scales &scales = userdata->PowhegScales;
-    const FKS::Param * params = userdata->Params;
-    const FKS::Param_as * params_as = userdata->Params_as;
-    if (userdata->BornMEStatus != UserProcess::BornMEStatus_t::CrossSection) {
-        InitBornME(params, params_as, AlphaScheme::Gmu,
-                   scales.mu * scales.mu, 0.0, &userdata->counterterm);
-        userdata->BornMEStatus = UserProcess::BornMEStatus_t::CrossSection;
-    }
-    BornMEOut bme;
-    BornME(bflv, ps, scales.mu, params, params_as, &bme, false, false,
-           userdata->counterterm);
-
-    return bme.M2;
-}
 
 enum class Type {
     QCD,
@@ -58,8 +41,13 @@ int GenRadiation(const BornConfig & bornconfig, const Phasespace::Phasespace &ps
     Radiation radiation;
     double kT2minG = userdata->RadiationParameter.kT2min;
     radiation.kT2 = 0.0;
-    // TODO: Set alpha_s for born
-    double B = Born(fl->Born.ID, ps, userdata);
+    // TODO: Set alpha_s for born. alpha_s should be arbitrary because we use
+    // Params_as in R and B. Therefore, it cancels in R/B except the radiation
+    // alpha. This is set later.
+    auto bme = userdata->MatrixElement->Born(fl->Born.ID, ps,
+                                             userdata->PowhegScales.mu,
+                                             userdata->Params, false, false);
+    double B = bme.M2;
     bool isborn = true;
     int n_used_radreg = 0;
     for (const auto &r : userdata->RadiationRegions) {

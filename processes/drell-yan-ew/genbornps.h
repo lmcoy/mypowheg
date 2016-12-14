@@ -2,7 +2,7 @@
 #define PROCESS_GENBORNPS_H_
 
 namespace Phasespace { class Phasespace; }
-namespace UserProcess { class Data; }
+namespace UserProcess { struct Data; }
 
 void GenBornPhasespace(Phasespace::Phasespace *ps_out, const int ndim,
                        const double x[], const UserProcess::Data *userdata);

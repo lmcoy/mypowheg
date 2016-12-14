@@ -175,6 +175,8 @@ class FlavourConfig {
                                      ///state
     std::vector<Remnant_t> Remnant2; ///< List of remnants for the 2nd initial
                                      ///state
+    std::vector<double> Scales;       ///< List of scales which are used to scale
+                                     ///BornME
     bool QCD = false;                ///< True, if a QCD real process is in Real
     bool EW = false;                 ///< True, if a EW real process is in Real
 
@@ -186,9 +188,13 @@ class FlavourConfig {
      * @param id number which identifies the matrix element in BornME
      * @param pdgs  pdgs of the born process
      * @param pdfs  pdfs for the initial state partons
+     * @param scales scales for the matrix element. There has to be a scale for
+     *               every pdf configuration. Therefore, scales has to have a
+     *               length of pdfs.size()/2 or 0. If the length is zero a scale
+     *               of 1 is assumed.
      */
-    FlavourConfig(int id, const PDGList &pdgs,
-                                 const std::vector<int> &pdfs);
+    FlavourConfig(int id, const PDGList &pdgs, const std::vector<int> &pdfs,
+                  const std::vector<double> &scales = {});
 
     /**
      * AddReal appends a new real process to FlavourConfig.

@@ -10,9 +10,13 @@ namespace FKS {
 
 RadiationRegion::RadiationRegion(const FKS::FlavourConfig *fl)
     : FlavourConfig(fl) {
-    double x[] = { 1e-4, 1e-3, 1e-2, 1e-1, 1e0, 1e1, 1e2, 1e3, 1e4, 1e5, 1e6 };
+    double x[] = { 1e-07,   1e-06,  5e-06,  1e-05,  5e-05,  0.0001,
+                   0.00025, 0.0005, 0.001,  0.0025, 0.005,  0.01,
+                   0.025,   0.05,   0.1,    0.25,   0.5,    1,
+                   2.5,     5.0,    10,     25.0,   50.0,   100,
+                   500.0,   1000,   5000.0, 10000,  100000, 1000000 };
     for (size_t i = 0; i < NPDF; i++) {
-        InitHist.Append(11, x);
+        InitHist.Append(30, x);
     }
 }
 
@@ -35,9 +39,7 @@ bool RadiationRegion::CreateHistograms(int Nbins) {
     return true;
 }
 
-void RadiationRegion::ComputeNorm() {
-    const char *born_pdgs =
-        Physics::PDG::CodesToName(FlavourConfig->Born.Flavours).c_str();
+void RadiationRegion::ComputeNorm(double Ratio) {
     for (size_t i = 0; i < NPDF; i++) {
         if (NormHist[i] == 0) {
             break;
@@ -48,8 +50,15 @@ void RadiationRegion::ComputeNorm() {
         int bmax =
             static_cast<int>(static_cast<double>(NormHist[i]->N()) * 0.08);
         double m = 1e-5 * NormHist[i]->GetNumEntries();
+        double sum = NormHist[i]->GetUnderflow();
+        double N = NormHist[i]->Sum();
+        double n2 = 1e13;
         for (int bin = 0; bin < NormHist[i]->N(); bin++) {
             double y = NormHist[i]->GetBinContent(bin);
+            sum += y;
+            if (sum > N * Ratio && n2 > 1e12) {
+                n2 = NormHist[i]->GetXUpper(bin);
+            }
             if (y < m && started) {
                 bins_with_zero += 1;
                 if (bins_with_zero > bmax) {
@@ -62,38 +71,13 @@ void RadiationRegion::ComputeNorm() {
                 started = true;
             }
         }
-        LIB_ASSERT(norm > 0.0,
-                   "born = %s, emitter = %d, pdf = %lu: It looks "
-                   "like the distribution of norms is not close to "
-                   "zero for large N in the histograms. You should "
-                   "try to use more samples in InitFindNorm. Expected to find "
-                   "at least %d bins without content but found only %d",
-                   born_pdgs, Region.J, i, bmax, bins_with_zero);
+        if (norm < 0.0) {
+            norm = 1e13;
+        }
+        norm = std::min(norm, n2);
         Norm[i] = norm;
-        // double overflow = (double)NormHist[i]->GetOverflow();
-        // double total = (double)NormHist[i]->GetNumEntries();
-        // double p_over = overflow / total;
-        // LIB_ASSERT(p_over < 0.002, "born = %d, emitter = %d, pdf = %lu: %.2f %% "
-        //                            "of values are in the overflow bin. "
-        //                            "Increase the number of points in the init "
-        //                            "phase of FindNorm.",
-        //            FlavourConfig->Born.ID, Region.J, i, 100.0 * p_over);
-        // double mean = NormHist[i]->Mean();
-        // double svariance = sqrt(NormHist[i]->Variance());
-        // LIB_ASSERT(mean < NormHist[i]->GetXMax() / 10.0,
-        //            "born = %s, emitter = %d, pdf = %lu: the mean of the norm "
-        //            "histogram is larger than 10 %% of the whole range. This "
-        //            "seems weird. Check what is going on! mean = %g, Nmax = %g",
-        //            born_pdgs, Region.J, i, mean, NormHist[i]->GetXMax());
-        // LIB_ASSERT(
-        //     svariance < NormHist[i]->GetXMax() / 10.0,
-        //     "born = %s, emitter = %d, pdf = %lu: the sqrt(variance) of the "
-        //     "norm histogram is larger than 10 %% of the whole range, i.e. the "
-        //     "width is pretty large. This will yield a bad performance. Check "
-        //     "what is "
-        //     "going on! "
-        //     "sqrt(variance) = %g, Nmax = %g",
-        //     born_pdgs, Region.J, i, svariance, NormHist[i]->GetXMax());
+        LIB_ASSERT(norm > 0.0,
+                   "error: did not find norm for upper bounding function.");
     }
 }
 
@@ -119,14 +103,14 @@ RadiationRegion::WriteNormHistBinaryToBuffer(Util::DataBuffer *buffer) const {
 bool RadiationRegion::MergeNormHistBinaryFromBuffer(Util::DataBuffer *buffer) {
     uint64_t num = buffer->GetUInt64();
     LIB_ASSERT((uint64_t)NPDF >= num,
-               "NPDF = %lu, but buffer has = %lu histograms", NPDF, num);
+               "NPDF = %lu, but buffer has = %llu histograms", NPDF, num);
     uint64_t num_hists = 0;
     for (uint64_t i = 0; i < NPDF; i++) {
         if(NormHist[i] == 0) break;
         num_hists += 1;
     }
     LIB_ASSERT(num == num_hists,
-               "RadiationRegion has %lu hists, but buffer has %lu", num_hists,
+               "RadiationRegion has %llu hists, but buffer has %llu", num_hists,
                num);
     for (size_t i = 0; i < num; i++) {
         Util::Histogram h(1, 0, 1);
@@ -152,7 +136,12 @@ void RadiationRegion::WriteNormHistToStream(std::ostream &of) const {
         }
         of << "set title \"born = " << born_pdgs << " pdf = " << i
            << " emitter = " << Region.J << "\"\n";
-        of << "plot \"-\" using 1:2 with lines\n";
+        of << "set xlabel \"N\"\n";
+        of << "set ylabel \"ratio\"\n";
+        of << "a = " << NormHist[i]->GetUnderflow() << "\n";
+        of << "b = " << NormHist[i]->GetNumEntries() << "\n";
+        of << "csum(x)=(a=a+x,a)/b\n";
+        of << "plot \"-\" using 1:(csum($2)) with lines ti \"cumulative distribution/total\"\n";
         NormHist[i]->WriteToStream(of, false);
         of << "e\n\n";
     }

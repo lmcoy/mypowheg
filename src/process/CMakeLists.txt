@@ -1,12 +1,10 @@
 # files
-set(SOURCEFILES
-    ${SOURCEFILES}
+set(PROCESS_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/data.cpp
     PARENT_SCOPE
 )
 
-set(HEADERS 
-    ${HEADERS}
+set(PROCESS_HEADERS 
     ${CMAKE_CURRENT_SOURCE_DIR}/matrixelement.h
     ${CMAKE_CURRENT_SOURCE_DIR}/data.h
     ${CMAKE_CURRENT_SOURCE_DIR}/histograms.h

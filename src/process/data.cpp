@@ -20,7 +20,27 @@ int Data::Init(const char *filename) {
         std::cerr << cfile.ErrorMsg() << "\n";
         return 1;
     }
+    int ret = readConfig(cfile);
+    if (ret == 1) {
+        return 1;
+    }
+    ret =  ProcessInit(cfile);
+    if (ret == 1) {
+        return 1;
+    }
+    if (!MatrixElement) {
+        return 1;
+    }
+    if (Process.size() == 0) {
+        return 1;
+    }
+    if (!cuts) {
+        return 1;
+    }
+    return 0;
+}
 
+int Data::readConfig(Config::File & cfile) {
     RecombinationParam rparam;
     if (cfile.GetDouble("recombination", "dR", &rparam.dR) !=
         Config::File::Error::NoError) {
@@ -35,7 +55,7 @@ int Data::Init(const char *filename) {
         return 1;
     }
 
-    IntegrationParams iparams;
+    auto &iparams = IntParams;
     if (cfile.GetInt("integration.setup", "iterations",
                      &iparams.iterations_setup) !=
         Config::File::Error::NoError) {
@@ -387,7 +407,6 @@ int Data::Init(const char *filename) {
         RadiationParameter.kT2min = d;
     }
     Recomb = rparam;
-    IntParams = iparams;
 
     SqrtS = sqrtS;
 
@@ -399,7 +418,7 @@ int Data::Init(const char *filename) {
     NRealPhi = (int)realPhi;
     NRemnXi = (int)remnXi;
 
-    return UserInit(cfile);
+    return 0;
 }
 
 void Data::Reset() {
@@ -407,7 +426,7 @@ void Data::Reset() {
     hists->Reset();
 }
 
-Data::~Data() { UserFree(); }
+Data::~Data() {}
 
 namespace {
 
@@ -486,5 +505,5 @@ void Data::Print() const {
     printf( " %-15s = %g\n", "kT2min", RadiationParameter.kT2min);
     printf("\n\n");
 
-    UserPrint(); 
+    ProcessPrint(); 
 }

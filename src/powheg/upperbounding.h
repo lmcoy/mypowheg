@@ -4,8 +4,8 @@
 #include "libconfig.h"
 #include "fks/process.h"
 
-namespace FKS { class RadiationRegion; }
-namespace UserProcess { class Data; }
+namespace FKS { struct RadiationRegion; }
+namespace UserProcess { struct Data; }
 namespace Phasespace { class Phasespace; }
 
 namespace Powheg {

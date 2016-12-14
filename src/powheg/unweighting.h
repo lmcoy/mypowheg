@@ -6,7 +6,7 @@
 #include "libconfig.h"
 
 namespace UserProcess {
-class Data;
+struct Data;
 }
 
 namespace Phasespace {

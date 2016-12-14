@@ -5,6 +5,11 @@
 
 namespace FKS { 
 
+/**
+ * @brief singular region
+ *
+ * Region represents a singular FKS region.
+ */
 struct Region {
     Region(int i = -1, int j = -1, unsigned resonance_id = 0)
         : I(i), J(j), ResonanceID(resonance_id) {}

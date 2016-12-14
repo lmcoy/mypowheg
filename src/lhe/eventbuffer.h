@@ -3,7 +3,7 @@
 
 namespace LHE {
 
-class Event;
+struct Event;
 
 class EventBuffer {
   public:

@@ -89,10 +89,9 @@ double SxG_ISR(const FKS::Real_t &real, const FKS::Phasespaces &PS,
     const int *pdgs_r = real.Flavours.data();
 
     const FKS::Param *param = userdata->Params;
-    const FKS::Param_as *param_as = userdata->Params_as;
     double alpha = param->alpha;
     if(type == Type::QCD) {
-        alpha = param_as->aS;
+        alpha = param->alphaS();
     }
     if (1.0 - y < delta) {
         if (xi < 1e-6) {
@@ -158,14 +157,15 @@ double SxG_ISR(const FKS::Real_t &real, const FKS::Phasespaces &PS,
     double real_isr = 0.0;
     double real_fsr = 0.0;
     if (mod || nointer) {
-        real_isr =
-            RealME(real.ID, PS.Real, param, param_as, Diagrams::ONLYISR);
-        real_fsr =
-            RealME(real.ID, PS.Real, param, param_as, Diagrams::ONLYFSR);
+        using Diag = UserProcess::IMatrixElement::Diagrams;
+        real_isr = userdata->MatrixElement->Real(real.ID, PS.Real, param,
+                                                 Diag::ONLYISR);
+        real_fsr = userdata->MatrixElement->Real(real.ID, PS.Real, param,
+                                                 Diag::ONLYFSR);
     }
     double real_int = 0.0;
     if (!nointer) {
-        double realme = RealME(real.ID, PS.Real, param, param_as);
+        double realme = userdata->MatrixElement->Real(real.ID, PS.Real, param);
         real_int = realme - real_isr - real_fsr;
     }
 
@@ -189,10 +189,9 @@ double SxG_FSR(const FKS::Real_t &real, const FKS::Phasespaces &PS,
     const int *pdgs_r = real.Flavours.data();
     
     const FKS::Param *param = userdata->Params;
-    const FKS::Param_as *param_as = userdata->Params_as;
     double alpha = param->alpha;
     if(type == Type::QCD) {
-        alpha = param_as->aS;
+        alpha = param->alphaS();
     }
 
     int pdg_b = pdgs_b[region.J];
@@ -261,14 +260,16 @@ double SxG_FSR(const FKS::Real_t &real, const FKS::Phasespaces &PS,
     double real_isr = 0.0;
     double real_fsr = 0.0;
     if (mod || nointer) {
-        real_fsr =
-            RealME(real.ID, PS.Real, param, param_as, Diagrams::ONLYFSR);
-        real_isr =
-            RealME(real.ID, PS.Real, param, param_as, Diagrams::ONLYISR);
+        using Diag = UserProcess::IMatrixElement::Diagrams;
+        real_fsr = userdata->MatrixElement->Real(real.ID, PS.Real, param,
+                                                 Diag::ONLYFSR);
+        real_isr = userdata->MatrixElement->Real(real.ID, PS.Real, param,
+                                                 Diag::ONLYISR);
     }
     double real_int = 0.0;
     if (!nointer) {
-        double realme = RealME(real.ID, PS.Real, param, param_as);
+        double realme =
+            userdata->MatrixElement->Real(real.ID, PS.Real, param);
         real_int = realme - real_fsr - real_isr;
     }
     double pre = (1.0 - y) * xi * xi;

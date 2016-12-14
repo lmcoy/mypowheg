@@ -40,7 +40,10 @@ BornConfig Powheg::unweighting(const Phasespace::Phasespace &ps, double x1,
         bconfig.status = BornConfig::Status::NegativeBtilde;
         return bconfig;
     }
-
+    if (tot == 0.0) {
+        bconfig.status = BornConfig::Status::Rejected;
+        return bconfig;
+    }
     auto meta = btilde.PickElement(userdata->rng.Random());
     bconfig.ProcessIndex = meta.first;
     bconfig.PDFindex = meta.second;

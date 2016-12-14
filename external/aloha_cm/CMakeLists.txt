@@ -12,3 +12,4 @@ FFS1_2.h               FFS2_0.h    FFS3_2.h  FFV1_0.h  FFV2_2.h    FFV2_4_0.h  F
 FFS1_3_0.h             FFS2_1.h    FFS3_3.h  FFV1_1.h  FFV2_3_0.h  FFV2_4_1.h  FFV2_5_3.h  FFV4_1.h  FFV5_3.h  SSS1_3.h  sxxxxx.h   VVS1_0.h  VVSS1_2.h  VVV1_3.h   VVVV2_0.h  VVVV3_1.h  VVVV4_2.h  VVVV5_3.h)
 
 add_library(aloha_cm ${SOURCEFILES} ${HEADERS})
+set_property(TARGET aloha_cm PROPERTY FOLDER "external")
