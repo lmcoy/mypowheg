@@ -1,20 +1,20 @@
 #include "powheg/roverb.h"
 
-#include <cassert>
-#include <array>
 #include <algorithm>
+#include <array>
+#include <cassert>
 
-#include "pdf/pdfinterface.h"
-#include "fks/ximax.h"
-#include "fks/process.h"
-#include "fks/sfunctions.h"
 #include "fks/param.h"
+#include "fks/process.h"
+#include "fks/radiationregion.h"
+#include "fks/sfunctions.h"
+#include "fks/ximax.h"
+#include "math/math.h"
+#include "pdf/pdfinterface.h"
 #include "phasespace/phasespace.h"
 #include "phasespace/realphasespace.h"
-#include "math/math.h"
 #include "process/data.h"
 #include "process/matrixelement.h"
-#include "fks/radiationregion.h"
 
 namespace {
 
@@ -22,8 +22,9 @@ namespace {
 
 class PDFCache {
   public:
-    PDFCache() {}
-    double Get(const PDF::InterfacePtr &  pdf, double x, double scale, int pdg) {
+    PDFCache() {
+    }
+    double Get(const PDF::InterfacePtr &pdf, double x, double scale, int pdg) {
 #ifdef PDFCACHE_ENABLE
         for (const auto &v : cache) {
             if (v.pdg == 0xff) {
@@ -73,7 +74,7 @@ void LumiRatio(const FKS::RadiationRegion &radreg,
                const Phasespace::Phasespace &ps_born,
                const Phasespace::Phasespace &ps_real,
                UserProcess::Data *userdata, double scale, int usepdf,
-               Util::StaticMatrix32 *output) {
+               Util::StaticMatrix128 *output) {
     assert(ps_born.N + 1 == ps_real.N);
     const auto fl = radreg.FlavourConfig;
     size_t pdf_len = fl->Born.PDF.size();
@@ -152,11 +153,11 @@ void LumiRatio(const FKS::RadiationRegion &radreg,
     }
 }
 
-std::array<double, 8> RoverB(double B, const FKS::RadiationRegion &radreg,
-                             const Phasespace::Phasespace &ps,
-                             const Phasespace::Phasespace &ps_real,
-                             double rad_alpha, UserProcess::Data *userdata) {
-    std::array<double, 8> output;
+std::array<double, MaxR> RoverB(double B, const FKS::RadiationRegion &radreg,
+                                const Phasespace::Phasespace &ps,
+                                const Phasespace::Phasespace &ps_real,
+                                double rad_alpha, UserProcess::Data *userdata) {
+    std::array<double, MaxR> output;
     output.fill(0.0);
     assert(ps_real.N == ps.N + 1);
 
@@ -166,7 +167,7 @@ std::array<double, 8> RoverB(double B, const FKS::RadiationRegion &radreg,
     double flux_born = 1.0 / (2.0 * ps.X1 * ps.X2 * ps.S);
 
     size_t n_real = radreg.RealFlavour.size();
-    assert(n_real < 8);
+    assert(n_real < MaxR);
     if (ps_real.X1 >= 1.0 || ps_real.X2 >= 1.0) {
         // TODO: It is possible that we have an unphysical real phase space
         // because the xi_max which is used in the sudakov for ISR radiation is
@@ -198,7 +199,7 @@ std::array<double, 8> RoverB(double B, const FKS::RadiationRegion &radreg,
         break;
     }
 
-    for(size_t j = 0; j < n_real; j++) {
+    for (size_t j = 0; j < n_real; j++) {
         int rflavour = radreg.RealFlavour[j]->ID;
         const FKS::RegionList &rlist = radreg.RealFlavour[j]->Regions;
         const auto &real = *radreg.RealFlavour[j];
@@ -258,4 +259,3 @@ std::array<double, 8> RoverB(double B, const FKS::RadiationRegion &radreg,
 }
 
 } // end namespace powheg
-

@@ -1,0 +1,58 @@
+
+[recombination]
+    dR = 0.000001
+
+[scales]
+    mu = 80.385
+    muF = 80.385
+
+[config]
+    SqrtS = 13000.0
+
+[integration.setup]
+    iterations = 5     
+    nevents = 10000     
+
+[integration]
+    iterations = 10    
+    nevents = 100000   
+
+[histograms]
+    mll = 2000, 0, 1000
+    pt(mu+) = 2000, 0, 1000
+    y(mu+) = 60, -6, 6
+
+[random]
+    seed1 = 1
+    seed2 = 2
+
+[RadiationSampling]
+    RealXi = 1
+    RealY = 1
+    RealPhi = 1
+    RemnantXi = 1
+
+[RadiationType]
+    QCD = 1
+    EW = 1
+    SplitME = 0
+    ModS = 0
+    #Approximation = NoPhotonRadiation
+    NoInterference = 0
+    QCDPDFScheme = MSbar
+    EWPDFScheme = DIS
+
+[PDF]
+    LHAID = 244600
+
+[EventGeneration]
+    seed = 0
+    nevents = 1000000
+    nperiteration = 10000
+
+[Unweighting]
+    GuessedVirtual = 1
+    MaxMultiple = 5
+
+[Radiation]
+    kT2min = 0.8

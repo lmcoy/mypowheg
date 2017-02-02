@@ -27,9 +27,8 @@ class File {
 
     int WriteHeader(std::istream &input, bool xml);
 
-    int WriteProcessInfo(double SqrtS, int lhaid,
+    int WriteProcessInfo(double SqrtS, int lhaid, int weighting,
                          const std::vector<LHE::Process> &plist);
-
 
     int WriteEvents(size_t len, const char* buffer);
     int Close();

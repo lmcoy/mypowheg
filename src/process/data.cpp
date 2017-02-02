@@ -54,6 +54,42 @@ int Data::readConfig(Config::File & cfile) {
         std::cerr << cfile.ErrorMsg() << "\n";
         return 1;
     }
+    {
+        long verb = 0;
+        auto c = cfile.GetInt("config", "Verbose", &verb);
+        switch(c) {
+            case Config::File::Error::NoError:
+                break;
+            case Config::File::Error::KeyNotFound:
+                verb = 0;
+                break;
+            default:
+                verb = 0;
+                std::cerr << cfile.ErrorMsg() << "\n";
+                return 1;
+        }
+        if (verb > 0) {
+            Verbose = verb;
+        }
+    }
+    {
+        long xsec = 0;
+        auto c = cfile.GetInt("config", "CalculateXSec", &xsec);
+        switch(c) {
+            case Config::File::Error::NoError:
+                break;
+            case Config::File::Error::KeyNotFound:
+                xsec = 0;
+                break;
+            default:
+                xsec = 0;
+                std::cerr << cfile.ErrorMsg() << "\n";
+                return 1;
+        }
+        if (xsec > 0) {
+            CalculateXSec = true;
+        }
+    }
 
     auto &iparams = IntParams;
     if (cfile.GetInt("integration.setup", "iterations",
@@ -76,6 +112,41 @@ int Data::readConfig(Config::File & cfile) {
         Config::File::Error::NoError) {
         std::cerr << cfile.ErrorMsg() << "\n";
         return 1;
+    }
+    {
+        long ignorevirt = 0;
+        auto c = cfile.GetInt("integration.setup", "IgnoreVirtual", &ignorevirt);
+        switch(c) {
+            case Config::File::Error::NoError:
+                break;
+            case Config::File::Error::KeyNotFound:
+                ignorevirt = 0;
+                break;
+            default:
+                ignorevirt = 0;
+            std::cerr << cfile.ErrorMsg() << "\n";
+            return 1;
+        }
+        if (ignorevirt > 0) {
+            IgnoreVirtualInSetup = true;
+        }
+    }
+    if (cfile.GetInt("xsec.setup", "iterations",
+                     &iparams.iterations_xsec_setup) !=
+        Config::File::Error::NoError) {
+        iparams.iterations_xsec_setup = iparams.iterations_setup;
+    }
+    if (cfile.GetInt("xsec.setup", "nevents", &iparams.nevents_xsec_setup) !=
+        Config::File::Error::NoError) {
+        iparams.nevents_xsec_setup = iparams.nevents_setup;
+    }
+    if (cfile.GetInt("xsec", "iterations", &iparams.iterations_xsec) !=
+        Config::File::Error::NoError) {
+        iparams.iterations_xsec = iparams.iterations;
+    }
+    if (cfile.GetInt("xsec", "nevents", &iparams.nevents_xsec) !=
+        Config::File::Error::NoError) {
+        iparams.nevents_xsec = iparams.nevents;
     }
 
     long seed1;
@@ -183,6 +254,101 @@ int Data::readConfig(Config::File & cfile) {
     }
     GenEvent.NperIt = genNperIt;
     GenEvent.seed3 = seed3;
+    {
+        long negevents = 0;
+        auto c = cfile.GetInt("EventGeneration", "NegativeEvents", &negevents);
+        switch(c) {
+            case Config::File::Error::NoError:
+                break;
+            case Config::File::Error::KeyNotFound:
+                negevents = 0;
+                break;
+            default:
+                negevents = 0;
+            std::cerr << cfile.ErrorMsg() << "\n";
+            return 1;
+        }
+        if (negevents > 0) {
+            NegativeEvents = true;
+        }
+    }
+    {
+        long bornunweighting = 0;
+        auto c = cfile.GetInt("EventGeneration", "BornUnweighting",
+                              &bornunweighting);
+        switch(c) {
+            case Config::File::Error::NoError:
+                break;
+            case Config::File::Error::KeyNotFound:
+                bornunweighting = 0;
+                break;
+            default:
+                bornunweighting = 0;
+                std::cerr << cfile.ErrorMsg() << "\n";
+                return 1;
+        }
+        if (bornunweighting > 0) {
+            BornUnweighting = true;
+        }
+    }
+    {
+        long genevents = 1;
+        auto c = cfile.GetInt("EventGeneration", "GenerateEvents", &genevents);
+        switch(c) {
+            case Config::File::Error::NoError:
+                break;
+            case Config::File::Error::KeyNotFound:
+                genevents = 1;
+                break;
+            default:
+                genevents = 1;
+                std::cerr << cfile.ErrorMsg() << "\n";
+                return 1;
+        }
+        if (genevents == 0) {
+            GenerateEvents = false;
+        }
+    }
+    {
+        long bornonly = 0;
+        auto c = cfile.GetInt("EventGeneration", "BornOnly", &bornonly);
+        switch(c) {
+            case Config::File::Error::NoError:
+                break;
+            case Config::File::Error::KeyNotFound:
+                bornonly = 0;
+                break;
+            default:
+                bornonly = 0;
+                std::cerr << cfile.ErrorMsg() << "\n";
+                return 1;
+        }
+        if (bornonly > 0) {
+            BornOnly = true;
+        } else {
+            BornOnly = false;
+        }
+    }
+
+    {
+        long cutreal = 0;
+        auto c = cfile.GetInt("cuts", "CutReal", &cutreal);
+        switch(c) {
+            case Config::File::Error::NoError:
+                break;
+            case Config::File::Error::KeyNotFound:
+            case Config::File::Error::CategoryNotFound:
+                cutreal = 0;
+                break;
+            default:
+                cutreal = 0;
+            std::cerr << cfile.ErrorMsg() << "\n";
+            return 1;
+        }
+        if (cutreal > 0) {
+            CutOnReal = true;
+        }
+    }
 
     {
         std::string approx = "";
@@ -217,6 +383,50 @@ int Data::readConfig(Config::File & cfile) {
         if (!RadiationType.EW && (!RadiatePhoton || OnlyVirtualEW)) {
             std::cerr << "warning: approximation useless "
                          "because there are no EW corrections anyway\n";
+        }
+    }
+
+    {
+        long rad_qed = 1;
+        auto c = cfile.GetInt("RadiationType", "RadiationQED", &rad_qed);
+        switch (c) {
+            case Config::File::Error::NoError:
+                break;
+            case Config::File::Error::KeyNotFound:
+            case Config::File::Error::CategoryNotFound:
+                rad_qed = 1;
+                break;
+            default:
+                rad_qed = 1;
+                std::cerr << cfile.ErrorMsg() << "\n";
+                return 1;
+        }
+        if (rad_qed > 0) {
+            RadiatePhoton = true;
+        } else {
+            RadiatePhoton = false;
+        }
+    }
+
+    {
+        long rad_qcd = 1;
+        auto c = cfile.GetInt("RadiationType", "RadiationQCD", &rad_qcd);
+        switch (c) {
+            case Config::File::Error::NoError:
+                break;
+            case Config::File::Error::KeyNotFound:
+            case Config::File::Error::CategoryNotFound:
+                rad_qcd = 1;
+                break;
+            default:
+                rad_qcd = 1;
+                std::cerr << cfile.ErrorMsg() << "\n";
+                return 1;
+        }
+        if (rad_qcd > 0) {
+            RadiateQCD = true;
+        } else {
+            RadiateQCD = false;
         }
     }
 
@@ -456,6 +666,7 @@ void Data::Print() const {
     printf(" internal parameters:\n");
     printf(" %-15s = %d\n", "OnlyVirtualEW", OnlyVirtualEW);
     printf(" %-15s = %d\n", "RadiatePhoton", RadiatePhoton);
+    printf(" %-15s = %d\n", "RadiateQCD", RadiateQCD);
     printf("\n\n");
 
     printf("/******************************************************************"
@@ -503,6 +714,27 @@ void Data::Print() const {
            " ******************************************************************"
            "***/\n");
     printf( " %-15s = %g\n", "kT2min", RadiationParameter.kT2min);
+    printf("\n\n");
+
+    printf("/******************************************************************"
+           "***\n"
+           " *                     NLO                                         "
+           "  *\n"
+           " ******************************************************************"
+           "***/\n");
+    printf( " %-15s = %d\n", "apply cuts to real", CutOnReal);
+    printf("\n\n");
+
+    printf("/******************************************************************"
+           "***\n"
+           " *                     Events                                      "
+           "  *\n"
+           " ******************************************************************"
+           "***/\n");
+    printf( " %-15s = %d\n", "negative events", NegativeEvents);
+    printf( " %-15s = %d\n", "born unweighting", BornUnweighting);
+    printf( " %-15s = %d\n", "born only", BornOnly);
+    printf( " %-15s = %d\n", "ignore V in grid setup", IgnoreVirtualInSetup);
     printf("\n\n");
 
     ProcessPrint(); 

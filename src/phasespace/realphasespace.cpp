@@ -3,13 +3,13 @@
 
 #include <cmath>
 
-#include "phasespace/phasespace.h"
 #include "math/fourmomentum.h"
 #include "math/math.h"
+#include "phasespace/phasespace.h"
 #include "realphasespace.h"
 
-#include <iostream>
 #include <iomanip>
+#include <iostream>
 
 namespace {
 double gen_x1(double x1bar, double xi, double y) {
@@ -41,9 +41,9 @@ namespace Phasespace {
 @brief Create FKS phase space for FSR
 
  */
-void GenRealPhasespaceFSR(Phasespace * RESTRICT ps_real,
-                          Phasespace const *const RESTRICT ps_born, int j, double xi,
-                          double y, double phi) {
+void GenRealPhasespaceFSR(Phasespace *RESTRICT ps_real,
+                          Phasespace const *const RESTRICT ps_born, int j,
+                          double xi, double y, double phi) {
     assert(j >= 2 && "particle j must be a final state particle!");
     assert(j < ps_born->N + 2 && "particle index j too large");
     assert(ps_born->Masses[j - 2] == 0.0 &&
@@ -53,6 +53,11 @@ void GenRealPhasespaceFSR(Phasespace * RESTRICT ps_real,
     assert(phi >= 0.0 && phi < 2.0 * Math::Pi);
     double s = ps_born->X1 * ps_born->X2 * ps_born->S;
     double sqrts = sqrt(s);
+    /*if (xi > 2.0 * ps_born->Momenta[j].MomentumMagnitude() / sqrts) {
+        printf("xi =    %25.15g\n", xi);
+        printf("ximax = %25.15g\n",
+               2.0 * ps_born->Momenta[j].MomentumMagnitude() / sqrts);
+    }*/
     // Math::FourMomentum rec =
     //     Math::FourMomentum(sqrts, 0, 0, 0).Minus(ps_born->Momenta[j]);
     // double Mrec2 = rec.Dot(rec);
@@ -64,18 +69,8 @@ void GenRealPhasespaceFSR(Phasespace * RESTRICT ps_real,
     double len_mother = sqrt(len_kj * len_kj + k0 * k0 + 2.0 * k0 * len_kj * y);
 
     // angle between mother and radiated parton
-    double cos_psi = 0.0;
-    if (xi < 1e-6) {
-        cos_psi = y + s * xi * (1.0 - y * y) / (s - Mrec2); // + O(xi^2)
-    } else {
-        if (y > 1.0 - 1e-4) {
-            cos_psi = 1.0 + (y - 1) * pow((Mrec2 + s * (xi - 1)) / (Mrec2 - s),
-                                          2); // + O[ (y-1)^2 ]
-        } else {
-            cos_psi = (len_mother * len_mother - len_kj * len_kj + k0 * k0) /
-                      (2.0 * len_mother * k0);
-        }
-    }
+    double cos_psi = (k0 + len_kj * y) / len_mother;
+
     if (fabs(cos_psi) > 1.0 && fabs(cos_psi) - 1.0 < 1e-6) {
         // correct numerical errors
         cos_psi = copysign(1.0, cos_psi);
@@ -153,9 +148,11 @@ void GenRealPhasespaceFSR(Phasespace * RESTRICT ps_real,
         if (i == j) {
             continue;
         }
-        double pold[] = { ps_born->Momenta[i].E(),  ps_born->Momenta[i].PX(),
-                          ps_born->Momenta[i].PY(), ps_born->Momenta[i].PZ(), };
-        double pnew[4] = { 0.0 };
+        double pold[] = {
+            ps_born->Momenta[i].E(), ps_born->Momenta[i].PX(),
+            ps_born->Momenta[i].PY(), ps_born->Momenta[i].PZ(),
+        };
+        double pnew[4] = {0.0};
         for (int k = 0; k < 4; k++) {
             for (int l = 0; l < 4; l++) {
                 pnew[k] += Lambda[k][l] * pold[l];
@@ -202,7 +199,7 @@ The FKS phase space is in its CM frame is written to ps_real.
 @param phi azimuthal angle of FKS parton in n+1 CMS (phi in [0,2Pi))
 @param[out] ps_real The constructed phase space is written to ps_real.
 */
-void GenRealPhasespaceISR(Phasespace * RESTRICT ps_real,
+void GenRealPhasespaceISR(Phasespace *RESTRICT ps_real,
                           Phasespace const *const RESTRICT ps_born, double xi,
                           double y, double phi, bool boost_to_cms) {
     // notation:
@@ -265,7 +262,7 @@ void GenRealPhasespaceISR(Phasespace * RESTRICT ps_real,
 #endif
 
     // boost final state momenta rest frame of k_tot & set masses
-    std::array<double, MAXMOM-2> masses;
+    std::array<double, MAXMOM - 2> masses;
     for (int i = 2; i < N + 2; i++) {
         double E_old = ps_born->Momenta[i].E();
         double px_old = ps_born->Momenta[i].PX();
@@ -317,13 +314,38 @@ void GenRealPhasespaceISR(Phasespace * RESTRICT ps_real,
     ps_real->N = ps_born->N + 1;
 }
 
-void GenRealPhasespace(Phasespace * RESTRICT ps_real,
-                          Phasespace const *const RESTRICT ps_born, int j, double xi,
-                          double y, double phi) {
-    if( j >= 2 ) {
-        GenRealPhasespaceFSR(ps_real, ps_born, j, xi, y, phi);
+void GenRealPhasespace(Phasespace *RESTRICT ps_real,
+                       Phasespace const *const RESTRICT ps_born, int i, int j,
+                       double xi, double y, double phi, bool boost_to_cms) {
+    assert(i >= 2);
+    int mother = (i < j) ? i : j;
+    if (mother >= 2) {
+        GenRealPhasespaceFSR(ps_real, ps_born, mother, xi, y, phi);
     } else {
-        GenRealPhasespaceISR(ps_real, ps_born, xi, y, phi, true);
+        GenRealPhasespaceISR(ps_real, ps_born, xi, y, phi, boost_to_cms);
+    }
+
+    // move last particle to position i
+    int N = ps_real->N;
+    auto p_rad = ps_real->Momenta[N + 1];
+    for (int n = N + 1; n > i; n--) {
+        ps_real->Momenta[n] = ps_real->Momenta[n - 1];
+    }
+    ps_real->Momenta[i] = p_rad;
+    if (i < j && mother + 1 != j) {
+        // move mother particle to j (note: mother is now at position mother+1)
+        auto pm = ps_real->Momenta[mother + 1];
+        if (mother + 1 > j) {
+            for (int n = mother + 1; n > j; n--) {
+                ps_real->Momenta[n] = ps_real->Momenta[n - 1];
+            }
+        }
+        if (mother + 1 < j) {
+            for (int n = mother + 1; n < j; n++) {
+                ps_real->Momenta[n] = ps_real->Momenta[n + 1];
+            }
+        }
+        ps_real->Momenta[j] = pm;
     }
 }
 

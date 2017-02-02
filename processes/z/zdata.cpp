@@ -3,10 +3,10 @@
 #include "config/file.h"
 
 #include "cuts.h"
+#include "matrixelement.h"
 #include "me/parameters_sm.h"
 #include "myhistograms.h"
 #include "scales.h"
-#include "matrixelement.h"
 
 using namespace UserProcess;
 
@@ -31,7 +31,8 @@ ZData::~ZData() {
 
 int ZData::ProcessInit(Config::File &cfile) {
     auto icuts = std::shared_ptr<DrellYanCuts>(new DrellYanCuts());
-    if (cfile.GetDoubleInterval("cuts", "mll", &icuts->mllmin, &icuts->mllmax) !=
+    if (cfile.GetDoubleInterval("cuts", "mll", &icuts->mllmin,
+                                &icuts->mllmax) !=
         Config::File::Error::NoError) {
         std::cerr << cfile.ErrorMsg() << "\n";
         return 1;
@@ -42,7 +43,8 @@ int ZData::ProcessInit(Config::File &cfile) {
         std::cerr << cfile.ErrorMsg() << "\n";
         return 1;
     }
-    if (cfile.GetDoubleInterval("cuts", "eta", &icuts->EtaMin, &icuts->EtaMax) !=
+    if (cfile.GetDoubleInterval("cuts", "eta", &icuts->EtaMin,
+                                &icuts->EtaMax) !=
         Config::File::Error::NoError) {
         std::cerr << cfile.ErrorMsg() << "\n";
         return 1;
@@ -75,7 +77,8 @@ int ZData::ProcessInit(Config::File &cfile) {
     }
 
     std::string mu_string = "";
-    if (cfile.GetString("scales", "mu", &mu_string) != Config::File::Error::NoError) {
+    if (cfile.GetString("scales", "mu", &mu_string) !=
+        Config::File::Error::NoError) {
         std::cerr << cfile.ErrorMsg() << "\n";
         return 1;
     }
@@ -110,7 +113,7 @@ int ZData::ProcessInit(Config::File &cfile) {
 
     auto me = std::make_shared<DrellYanME>();
     me->Init(Params, AlphaScheme::Gmu, .0);
-    
+
     MatrixElement = me;
 
     hists = new MyHistograms(3);
@@ -119,20 +122,16 @@ int ZData::ProcessInit(Config::File &cfile) {
     hists->Init1D(2, hist_y[0], hist_y[1], hist_y[2]);
 
     Process = generateProcesses(RadiationType.QCD, RadiationType.EW);
-    
-    // add Z resonance
-    ResonanceISR.pdg = 23;
-    ResonanceISR.ID[0] = 2;
-    ResonanceISR.ID[1] = 3;
 
-    ResonanceFSR.pdg = 23;
-    ResonanceFSR.ID[0] = 2;
-    ResonanceFSR.ID[1] = 3;
-    ResonanceFSR.ID[2] = 4;
+    // add Z resonance
+    Resonance.pdg = 23;
+    Resonance.ID[0] = 2;
+    Resonance.ID[1] = 3;
+
     return 0;
 }
 
-static void complex_to_str(int n, char * buffer, std::complex<double> c) {
+static void complex_to_str(int n, char *buffer, std::complex<double> c) {
     char sign = '+';
     if (c.imag() < 0.0) {
         sign = '-';
@@ -176,7 +175,7 @@ void ZData::ProcessPrint() const {
            " ******************************************************************"
            "***/\n");
 
-    Parameters_sm * params = dynamic_cast<Parameters_sm*>(Params);
+    Parameters_sm *params = dynamic_cast<Parameters_sm *>(Params);
     printf(" %-6s = %g\n", "MW", params->MW);
     printf(" %-6s = %g\n", "MZ", params->MZ);
     printf(" %-6s = %g\n", "WidthW", params->WidthW);
@@ -221,122 +220,127 @@ void ZData::ProcessPrint() const {
 FKS::ProcessList generateProcesses(bool QCD, bool EW) {
     using R = DrellYanME::SubProcesses;
     FKS::ProcessList list;
-    FKS::FlavourConfig fl1(0, { { -2, 2, -13, 13 } }, { { -2, 2, -4, 4 } });
+    FKS::ColorFlow color1 = {0, 501, 0, 0};
+    FKS::ColorFlow color2 = {501, 0, 0, 0};
+    FKS::FlavourConfig fl1(0, {{-2, 2, -13, 13}}, {{-2, 2, -4, 4}}, color1,
+                           color2);
     if (EW) {
         FKS::ResonanceList resonances;
         size_t isr_res = resonances.Add(
-            FKS::Resonance({ { 2, 3 } }, 91.1876, 2.4952, 2.0 / 3.0));
-        size_t fsr_res = resonances.Add(
-            FKS::Resonance({ { 2, 3, 4 } }, 91.1876, 2.4952, 1.0));
+            FKS::Resonance({{2, 3}}, 91.1876, 2.4952, 2.0 / 3.0));
+        size_t fsr_res =
+            resonances.Add(FKS::Resonance({{2, 3, 4}}, 91.1876, 2.4952, 1.0));
         FKS::RegionList rlist;
         // add all real flavour structures
         rlist.push_back(FKS::Region(4, 2, fsr_res));
         rlist.push_back(FKS::Region(4, 3, fsr_res));
         rlist.push_back(FKS::Region(4, 0, isr_res));
-        fl1.AddReal(R::UXU_MUXMU_A, FKS::Type_t::EW, { { -2, 2, -13, 13, 22 } },
-                    { { -2, 2, -4, 4 } }, rlist, resonances);
-
+        fl1.AddRealDY(R::UXU_MUXMU_A, FKS::Type_t::EW, {{-2, 2, -13, 13, 22}},
+                      {{-2, 2, -4, 4}}, rlist, resonances);
     }
     if (QCD) {
         FKS::RegionList rlist;
         // add all real flavour structures
         rlist.push_back(FKS::Region(4, 0));
-        fl1.AddReal(R::UXU_MUXMU_G, FKS::Type_t::QCD,
-                    { { -2, 2, -13, 13, 21 } }, { { -2, 2, -4, 4 } }, rlist);
-        fl1.AddReal(R::UXG_MUXMU_UX, FKS::Type_t::QCD,
-                    { { -2, 21, -13, 13, -2 } }, { { -2, 0, -4, 0 } }, rlist);
-        fl1.AddReal(R::GU_MUXMU_U, FKS::Type_t::QCD, { { 21, 2, -13, 13, 2 } },
-                    { { 0, 2, 0, 4 } }, rlist);
+        fl1.AddRealDY(R::UXU_MUXMU_G, FKS::Type_t::QCD, {{-2, 2, -13, 13, 21}},
+                      {{-2, 2, -4, 4}}, rlist);
+        fl1.AddRealDY(R::UXG_MUXMU_UX, FKS::Type_t::QCD,
+                      {{-2, 21, -13, 13, -2}}, {{-2, 0, -4, 0}}, rlist);
+        fl1.AddRealDY(R::GU_MUXMU_U, FKS::Type_t::QCD, {{21, 2, -13, 13, 2}},
+                      {{0, 2, 0, 4}}, rlist);
     }
     list.push_back(fl1);
 
-    FKS::FlavourConfig fl2(1, { { 2, -2, -13, 13 } }, { { 2, -2, 4, -4 } });
+    color1 = {501, 0, 0, 0};
+    color2 = {0, 501, 0, 0};
+    FKS::FlavourConfig fl2(1, {{2, -2, -13, 13}}, {{2, -2, 4, -4}}, color1,
+                           color2);
     if (EW) {
         FKS::ResonanceList resonances;
         size_t isr_res = resonances.Add(
-            FKS::Resonance({ { 2, 3 } }, 91.1876, 2.4952, 2.0 / 3.0));
-        size_t fsr_res = resonances.Add(
-            FKS::Resonance({ { 2, 3, 4 } }, 91.1876, 2.4952, 1.0));
+            FKS::Resonance({{2, 3}}, 91.1876, 2.4952, 2.0 / 3.0));
+        size_t fsr_res =
+            resonances.Add(FKS::Resonance({{2, 3, 4}}, 91.1876, 2.4952, 1.0));
         FKS::RegionList rlist;
         // add all real flavour structures
         rlist.push_back(FKS::Region(4, 2, fsr_res));
         rlist.push_back(FKS::Region(4, 3, fsr_res));
         rlist.push_back(FKS::Region(4, 0, isr_res));
-        fl2.AddReal(R::UUX_MUXMU_A, FKS::Type_t::EW, { { 2, -2, -13, 13, 22 } },
-                    { { 2, -2, 4, -4 } }, rlist, resonances);
+        fl2.AddRealDY(R::UUX_MUXMU_A, FKS::Type_t::EW, {{2, -2, -13, 13, 22}},
+                      {{2, -2, 4, -4}}, rlist, resonances);
     }
     if (QCD) {
         FKS::RegionList rlist;
         // add all real flavour structures
         rlist.push_back(FKS::Region(4, 0));
-        fl2.AddReal(R::UUX_MUXMU_G, FKS::Type_t::QCD,
-                    { { 2, -2, -13, 13, 21 } }, { { 2, -2, 4, -4 } }, rlist);
-        fl2.AddReal(R::UG_MUXMU_U, FKS::Type_t::QCD, { { 2, 21, -13, 13, 2 } },
-                    { { 2, 0, 4, 0 } }, rlist);
-        fl2.AddReal(R::GUX_MUXMU_UX, FKS::Type_t::QCD,
-                    { { 21, -2, -13, 13, -2 } }, { { 0, -2, 0, -4 } }, rlist);
+        fl2.AddRealDY(R::UUX_MUXMU_G, FKS::Type_t::QCD, {{2, -2, -13, 13, 21}},
+                      {{2, -2, 4, -4}}, rlist);
+        fl2.AddRealDY(R::UG_MUXMU_U, FKS::Type_t::QCD, {{2, 21, -13, 13, 2}},
+                      {{2, 0, 4, 0}}, rlist);
+        fl2.AddRealDY(R::GUX_MUXMU_UX, FKS::Type_t::QCD,
+                      {{21, -2, -13, 13, -2}}, {{0, -2, 0, -4}}, rlist);
     }
     list.push_back(fl2);
 
-    FKS::FlavourConfig fl3(2, { { -1, 1, -13, 13 } },
-                           { { -1, 1, -3, 3, -5, 5 } });
+    color1 = {0, 501, 0, 0};
+    color2 = {501, 0, 0, 0};
+    FKS::FlavourConfig fl3(2, {{-1, 1, -13, 13}}, {{-1, 1, -3, 3, -5, 5}},
+                           color1, color2);
     if (EW) {
         FKS::ResonanceList resonances;
         size_t isr_res = resonances.Add(
-            FKS::Resonance({ { 2, 3 } }, 91.1876, 2.4952, 1.0 / 3.0));
-        size_t fsr_res = resonances.Add(
-            FKS::Resonance({ { 2, 3, 4 } }, 91.1876, 2.4952, 1.0));
+            FKS::Resonance({{2, 3}}, 91.1876, 2.4952, 1.0 / 3.0));
+        size_t fsr_res =
+            resonances.Add(FKS::Resonance({{2, 3, 4}}, 91.1876, 2.4952, 1.0));
         FKS::RegionList rlist;
         // add all real flavour structures
         rlist.push_back(FKS::Region(4, 2, fsr_res));
         rlist.push_back(FKS::Region(4, 3, fsr_res));
         rlist.push_back(FKS::Region(4, 0, isr_res));
-        fl3.AddReal(R::DXD_MUXMU_A, FKS::Type_t::EW, { { -1, 1, -13, 13, 22 } },
-                    { { -1, 1, -3, 3, -5, 5 } }, rlist, resonances);
+        fl3.AddRealDY(R::DXD_MUXMU_A, FKS::Type_t::EW, {{-1, 1, -13, 13, 22}},
+                      {{-1, 1, -3, 3, -5, 5}}, rlist, resonances);
     }
     if (QCD) {
         FKS::RegionList rlist;
         // add all real flavour structures
         rlist.push_back(FKS::Region(4, 0));
-        fl3.AddReal(R::DXD_MUXMU_G, FKS::Type_t::QCD,
-                    { { -1, 1, -13, 13, 21 } }, { { -1, 1, -3, 3, -5, 5 } },
-                    rlist);
-        fl3.AddReal(R::DXG_MUXMU_DX, FKS::Type_t::QCD,
-                    { { -1, 21, -13, 13, -1 } }, { { -1, 0, -3, 0, -5, 0 } },
-                    rlist);
-        fl3.AddReal(R::GD_MUXMU_D, FKS::Type_t::QCD, { { 21, 1, -13, 13, 1 } },
-                    { { 0, 1, 0, 3, 0, 5 } }, rlist);
+        fl3.AddRealDY(R::DXD_MUXMU_G, FKS::Type_t::QCD, {{-1, 1, -13, 13, 21}},
+                      {{-1, 1, -3, 3, -5, 5}}, rlist);
+        fl3.AddRealDY(R::DXG_MUXMU_DX, FKS::Type_t::QCD,
+                      {{-1, 21, -13, 13, -1}}, {{-1, 0, -3, 0, -5, 0}}, rlist);
+        fl3.AddRealDY(R::GD_MUXMU_D, FKS::Type_t::QCD, {{21, 1, -13, 13, 1}},
+                      {{0, 1, 0, 3, 0, 5}}, rlist);
     }
     list.push_back(fl3);
 
-    FKS::FlavourConfig fl4(3, { { 1, -1, -13, 13 } },
-                           { { 1, -1, 3, -3, 5, -5 } });
+    color1 = {501, 0, 0, 0};
+    color2 = {0, 501, 0, 0};
+    FKS::FlavourConfig fl4(3, {{1, -1, -13, 13}}, {{1, -1, 3, -3, 5, -5}},
+                           color1, color2);
     if (EW) {
         FKS::ResonanceList resonances;
         size_t isr_res = resonances.Add(
-            FKS::Resonance({ { 2, 3 } }, 91.1876, 2.4952, 1.0 / 3.0));
-        size_t fsr_res = resonances.Add(
-            FKS::Resonance({ { 2, 3, 4 } }, 91.1876, 2.4952, 1.0));
+            FKS::Resonance({{2, 3}}, 91.1876, 2.4952, 1.0 / 3.0));
+        size_t fsr_res =
+            resonances.Add(FKS::Resonance({{2, 3, 4}}, 91.1876, 2.4952, 1.0));
         FKS::RegionList rlist;
         // add all real flavour structures
         rlist.push_back(FKS::Region(4, 2, fsr_res));
         rlist.push_back(FKS::Region(4, 3, fsr_res));
         rlist.push_back(FKS::Region(4, 0, isr_res));
-        fl4.AddReal(R::DDX_MUXMU_A, FKS::Type_t::EW, { { 1, -1, -13, 13, 22 } },
-                    { { 1, -1, 3, -3, 5, -5 } }, rlist, resonances);
+        fl4.AddRealDY(R::DDX_MUXMU_A, FKS::Type_t::EW, {{1, -1, -13, 13, 22}},
+                      {{1, -1, 3, -3, 5, -5}}, rlist, resonances);
     }
     if (QCD) {
         FKS::RegionList rlist;
         // add all real flavour structures
         rlist.push_back(FKS::Region(4, 0));
-        fl4.AddReal(R::DDX_MUXMU_G, FKS::Type_t::QCD,
-                    { { 1, -1, -13, 13, 21 } }, { { 1, -1, 3, -3, 5, -5 } },
-                    rlist);
-        fl4.AddReal(R::DG_MUXMU_D, FKS::Type_t::QCD, { { 1, 21, -13, 13, 1 } },
-                    { { 1, 0, 3, 0, 5, 0 } }, rlist);
-        fl4.AddReal(R::GDX_MUXMU_DX, FKS::Type_t::QCD,
-                    { { 21, -1, -13, 13, -1 } }, { { 0, -1, 0, -3, 0, -5 } },
-                    rlist);
+        fl4.AddRealDY(R::DDX_MUXMU_G, FKS::Type_t::QCD, {{1, -1, -13, 13, 21}},
+                      {{1, -1, 3, -3, 5, -5}}, rlist);
+        fl4.AddRealDY(R::DG_MUXMU_D, FKS::Type_t::QCD, {{1, 21, -13, 13, 1}},
+                      {{1, 0, 3, 0, 5, 0}}, rlist);
+        fl4.AddRealDY(R::GDX_MUXMU_DX, FKS::Type_t::QCD,
+                      {{21, -1, -13, 13, -1}}, {{0, -1, 0, -3, 0, -5}}, rlist);
     }
     list.push_back(fl4);
 

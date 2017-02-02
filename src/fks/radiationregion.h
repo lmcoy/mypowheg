@@ -17,6 +17,7 @@ namespace FKS {
 
 struct RadiationRegion {
     static const size_t NPDF = 6;
+    static constexpr double InitThreshold = 0.001;
     RadiationRegion(const FKS::FlavourConfig *fl);
     ~RadiationRegion();
 

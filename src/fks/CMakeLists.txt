@@ -19,6 +19,7 @@ set(FKS_SOURCES
 set(FKS_HEADERS 
     ${CMAKE_CURRENT_SOURCE_DIR}/limits.h
     ${CMAKE_CURRENT_SOURCE_DIR}/luminosity.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/constants.h
     ${CMAKE_CURRENT_SOURCE_DIR}/color.h 
     ${CMAKE_CURRENT_SOURCE_DIR}/regions.h
     ${CMAKE_CURRENT_SOURCE_DIR}/process.h

@@ -1,10 +1,10 @@
-#include <math.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <pthread.h>
-#include <unistd.h>
-#include <time.h>
 #include <assert.h>
+#include <math.h>
+#include <pthread.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+#include <unistd.h>
 
 #include <mpi.h>
 
@@ -96,34 +96,43 @@ struct VegasRandom {
     vegas_initrandom init;
     vegas_freerandom free;
     vegas_getrandom get;
-    void * init_arg;
+    void *init_arg;
 };
 
 struct VegasState {
-  struct Matrix *xi;
-  int nbin;
-  int ndim;
-  double si;
-  double schi;
-  double swgt;
-  int has_grid;
-  int refine_grid; ///< If zero the grid is not updated
-  int ncalls_last_it; ///< Number of points which were used in the last
-                      ///iteration. Equals ncall if no event was rejected.
+    struct Matrix *xi;
+    struct Matrix *max;
+    int nbin;
+    int ndim;
+    // intgral values
+    double si;
+    double schi;
+    double swgt;
+    int iterations;
+    // abs integral values
+    double siabs;
+    double schiabs;
+    double swgtabs;
+    int has_grid;
+    int refine_grid;    ///< If zero the grid is not updated
+    int ncalls_last_it; ///< Number of points which were used in the last
+                        /// iteration. Equals ncall if no event was rejected.
 
-  struct VegasRandom random;
-  rnd_gen *generators;
-  vegas_create_msg msg_after_it;
-  vegas_process_msg proc_after_it;
-  int after_it_bufferlen;
-  void * proc_args;
+    struct VegasRandom random;
+    rnd_gen *generators;
+    vegas_create_msg msg_after_it;
+    vegas_process_msg proc_after_it;
+    int after_it_bufferlen;
+    void *proc_args;
+    double abserror;
+    double relerror;
 };
 
-void vegas_enable_update_grid(struct VegasState * state) {
+void vegas_enable_update_grid(struct VegasState *state) {
     state->refine_grid = 1;
 }
 
-void vegas_disable_update_grid(struct VegasState * state) {
+void vegas_disable_update_grid(struct VegasState *state) {
     state->refine_grid = 0;
 }
 
@@ -133,6 +142,9 @@ void vegas_reset_grid(struct VegasState *state) {
     for (j = 0; j < ndim; j++) {
         matrix_set(state->xi, j, 0, 1.0);
     }
+    for(j = 0; j < ndim * state->nbin; j++) {
+        state->max->m[j] = 2.0;
+    }
     state->has_grid = 0;
 }
 
@@ -140,6 +152,36 @@ void vegas_reset_int(struct VegasState *state) {
     state->si = 0.0;
     state->schi = 0.0;
     state->swgt = 0.0;
+    state->siabs = 0.0;
+    state->schiabs = 0.0;
+    state->swgtabs = 0.0;
+    state->iterations = 0;
+}
+
+void vegas_get_integral(struct VegasState *state, double *integral,
+                        double *error, double *chi2ndf) {
+        *integral = state->si / state->swgt;
+        *error = sqrt(1.0 / state->swgt);
+        if (chi2ndf != NULL) {
+            double ndf = state->iterations - 1.0;
+            *chi2ndf = (state->schi - state->si * *integral) / (ndf + 1e-6);
+            if (*chi2ndf < 0.0) {
+                *chi2ndf = 0.0;
+            }
+        }
+}
+
+void vegas_get_integralabs(struct VegasState *state, double *integralabs,
+                           double *error, double *chi2ndf) {
+        *integralabs = state->siabs / state->swgtabs;
+        *error = sqrt(1.0 / state->swgt);
+        if (chi2ndf != NULL) {
+            double ndf = state->iterations - 1.0;
+            *chi2ndf = (state->schiabs - state->siabs * *integralabs) / (ndf + 1e-6);
+            if (*chi2ndf < 0.0) {
+                *chi2ndf = 0.0;
+            }
+        }
 }
 
 void vegas_init_grid(struct VegasState *state) {
@@ -170,13 +212,13 @@ void vegas_set_random(struct VegasState *state, vegas_initrandom initrandom,
     state->random.free = freerandom;
 }
 
-static void vegas_free_random(struct VegasState * state) {
+static void vegas_free_random(struct VegasState *state) {
     if (state->generators == NULL) {
         return;
     }
     int dim;
     int ndim = state->ndim;
-    struct VegasRandom * rnd = &state->random;
+    struct VegasRandom *rnd = &state->random;
     for (dim = 0; dim < ndim; dim++) {
         rnd->free(state->generators[dim]);
     }
@@ -189,7 +231,7 @@ void vegas_seed_random(struct VegasState *state, int seed) {
         vegas_free_random(state);
     }
     int ndim = state->ndim;
-    struct VegasRandom * rnd = &state->random;
+    struct VegasRandom *rnd = &state->random;
 
     state->generators = malloc(sizeof(rnd_gen) * ndim);
     int dim;
@@ -198,15 +240,19 @@ void vegas_seed_random(struct VegasState *state, int seed) {
     }
 }
 
-
 struct VegasState *vegas_new(int ndim, int nbin) {
     struct VegasState *state = malloc(sizeof(struct VegasState));
     state->xi = matrix_new(ndim, nbin);
+    state->max = matrix_new(ndim, nbin);
     state->nbin = nbin;
     state->ndim = ndim;
     state->si = 0.0;
     state->schi = 0.0;
     state->swgt = 0.0;
+    state->siabs = 0.0;
+    state->schiabs = 0.0;
+    state->swgtabs = 0.0;
+    state->iterations = 0;
     vegas_reset_grid(state);
     vegas_init_grid(state);
     state->random.get = NULL;
@@ -215,12 +261,22 @@ struct VegasState *vegas_new(int ndim, int nbin) {
     state->random.init_arg = NULL;
     state->msg_after_it = NULL;
     state->proc_after_it = NULL;
-    state->proc_args =NULL;
+    state->proc_args = NULL;
     state->after_it_bufferlen = 0;
     state->refine_grid = 1;
     state->ncalls_last_it = 0;
     state->generators = NULL;
+    state->abserror = 0.0;
+    state->relerror = 0.0;
     return state;
+}
+
+void vegas_reset_max(struct VegasState * state) {
+    int i = 0;
+    int N = state->nbin * state->ndim;
+    for (i = 0; i < N; i++) {
+        state->max->m[i] = 2.0;
+    }
 }
 
 int vegas_read_grid_from_file(struct VegasState *state, const char *filename) {
@@ -282,8 +338,32 @@ fail:
     return -1;
 }
 
+int vegas_write_max_to_file(const struct VegasState * state, const char* filename) { 
+    FILE *file = fopen(filename, "w");
+    if (!file) {
+        return -1;
+    }
+    int ret = fprintf(file, "%d %d ", state->ndim, state->nbin);
+    if (ret < 4) {
+        goto fail;
+    }
+    int i;
+    for (i = 0; i < state->ndim * state->nbin; i++) {
+        int ret = fprintf(file, "%20.12g ", state->max->m[i]);
+        if (ret < 2) {
+            goto fail;
+        }
+    }
+    fclose(file);
+    return 0;
+fail:
+    fclose(file);
+    return -1;
+}
+
 void vegas_free(struct VegasState *state) {
     matrix_free(state->xi);
+    matrix_free(state->max);
     vegas_free_random(state);
     state->generators = NULL;
     free(state);
@@ -301,7 +381,6 @@ int vegas_register(struct VegasState *state, enum When when, vegas_create_msg f,
     }
     return -1;
 }
-
 
 void vegas_write_grid_1d(struct VegasState *state, int dim, FILE *stream) {
     fprintf(stream,
@@ -332,6 +411,14 @@ void vegas_write_grid_2d(struct VegasState *state, int dim1, int dim2,
     fprintf(stream, "EOF\n");
 }
 
+void vegas_set_relative_accuracy(struct VegasState *state, double relerror) {
+    state->relerror = relerror;
+}
+
+void vegas_set_absolute_accuracy(struct VegasState *state, double abserror) {
+    state->abserror = abserror;
+}
+
 static int min(int a, int b) {
     if (a < b) {
         return a;
@@ -342,25 +429,27 @@ static int min(int a, int b) {
 struct int_state {
     int *ia;
     double *x;
-    struct Matrix * xi;
+    struct Matrix *xi;
+    struct Matrix *max;
     int ndim;
-    rnd_gen * generators;
-    struct Matrix * d;
-    struct Matrix * di;
+    rnd_gen *generators;
+    struct Matrix *d;
+    struct Matrix *di;
     double fb;
+    double fbabs;
     double f2b;
     int ncalls;
 };
 
 static void int_state_init(struct int_state *istate, int ndim, int nbin,
-                           rnd_gen* rnd_gen,
-                           int seed) {
+                           rnd_gen *rnd_gen, int seed) {
     istate->di = matrix_new(nbin, ndim);
     istate->d = matrix_new(nbin, ndim);
     istate->ia = malloc(sizeof(int) * ndim);
     istate->x = malloc(sizeof(double) * ndim);
 
     istate->xi = matrix_new(ndim, nbin);
+    istate->max = matrix_new(ndim, nbin);
 
     istate->generators = rnd_gen;
     istate->ndim = ndim;
@@ -375,6 +464,7 @@ static void int_state_free(struct int_state *istate) {
     matrix_free(istate->d);
     matrix_free(istate->di);
     matrix_free(istate->xi);
+    matrix_free(istate->max);
 }
 
 static void integration(struct int_state *istate, int ncall, int additional,
@@ -384,6 +474,7 @@ static void integration(struct int_state *istate, int ncall, int additional,
     matrix_set_zero(istate->di);
     matrix_set_zero(istate->d);
     istate->fb = 0.0;
+    istate->fbabs = 0.0;
     istate->f2b = 0.0;
     istate->ncalls = 0;
     int k, j, i;
@@ -431,7 +522,7 @@ static void integration(struct int_state *istate, int ncall, int additional,
                 n_max -= additional;
             }
             n_max += 1;
-        } else if(reject == -2) {
+        } else if (reject == -2) {
             // redo point and don't use integrand value
             k -= 1;
             continue;
@@ -442,12 +533,33 @@ static void integration(struct int_state *istate, int ncall, int additional,
         double f = wgt * ff;
         double f2 = f * f;
         istate->fb += f;
+        istate->fbabs += fabs(f);
         istate->f2b += f2;
+
+        for (j = 0; j < ndim; j++) {
+            for (i = 0; i < nbin; i++) {
+                if (istate->x[j] < matrix_get(istate->xi, j, i)) {
+                    double old_max = matrix_get(istate->max, j, i);
+                    if (f > old_max) {
+                        if (f > 2.0 * old_max) {
+                            matrix_set(istate->max, j, i,
+                                       old_max *
+                                           (1.0 + 1.0 / (10.0 * (double)ndim)));
+                        } else {
+                            matrix_set(istate->max, j, i, f);
+                        }
+                    }
+                    break;
+                }
+            }
+        }
+
         for (j = 0; j < ndim; j++) {
             int iaj = istate->ia[j];
             matrix_add_to_elem(istate->di, iaj - 1, j, f);
             matrix_add_to_elem(istate->d, iaj - 1, j, f2);
         }
+
     }
     if (rej == 0 && rank != 0) {
         istate->ncalls = ncall;
@@ -466,26 +578,33 @@ static void worker(struct VegasState *state, int ndim, int nbin, int rank,
     char *buffer = malloc(sizeof(char) * bufferlen);
 
     int it;
-    for (it = 0; it < itmx; it++) {
+    int finish = 0;
+    for (it = 0; it < itmx && finish == 0; it++) {
         MPI_Bcast(istate.xi->m, ndim * nbin, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-        integration(&istate, ncall, additional, ndim, nbin, rank, num_procs, 
+        MPI_Bcast(istate.max->m, ndim * nbin, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+        integration(&istate, ncall, additional, ndim, nbin, rank, num_procs,
                     rnd, fxn, userdata);
 
         MPI_Send(&istate.fb, 1, MPI_DOUBLE, 0, VEGAS_MPI_TAG, MPI_COMM_WORLD);
+        MPI_Send(&istate.fbabs, 1, MPI_DOUBLE, 0, VEGAS_MPI_TAG, MPI_COMM_WORLD);
         MPI_Send(&istate.f2b, 1, MPI_DOUBLE, 0, VEGAS_MPI_TAG, MPI_COMM_WORLD);
         int di_size = istate.di->nrow * istate.di->ncol;
         int d_size = istate.d->nrow * istate.d->ncol;
+        int max_size = istate.max->nrow * istate.max->ncol;
         MPI_Send(istate.di->m, di_size, MPI_DOUBLE, 0, VEGAS_MPI_TAG,
                  MPI_COMM_WORLD);
         MPI_Send(istate.d->m, d_size, MPI_DOUBLE, 0, VEGAS_MPI_TAG,
                  MPI_COMM_WORLD);
         MPI_Send(&istate.ncalls, 1, MPI_INT, 0, VEGAS_MPI_TAG, MPI_COMM_WORLD);
+        MPI_Send(istate.max->m, max_size, MPI_DOUBLE, 0, VEGAS_MPI_TAG,
+                 MPI_COMM_WORLD);
 
-        if(cmsg != NULL) {
+        if (cmsg != NULL) {
             cmsg(userdata, bufferlen, buffer);
             MPI_Send(buffer, bufferlen, MPI_CHAR, 0, VEGAS_MPI_TAG,
                      MPI_COMM_WORLD);
         }
+        MPI_Bcast(&finish, 1, MPI_INT, 0, MPI_COMM_WORLD);
     }
     int_state_free(&istate);
     free(buffer);
@@ -506,21 +625,31 @@ static void master(struct VegasState *state, int rank, int num_procs, int ncall,
     double *xin = malloc(sizeof(double) * nbin);
     struct Matrix *di_add = matrix_new(nbin, ndim);
     struct Matrix *d_add = matrix_new(nbin, ndim);
+    struct Matrix *max = matrix_new(nbin, ndim);
 
     struct int_state istate;
     int_state_init(&istate, ndim, nbin, state->generators, seed);
 
     char *buffer = malloc(sizeof(char) * state->after_it_bufferlen);
     int it;
-    for (it = 0; it < itmx; it++) {
+    double fb_tot = 0.0;
+    double f2b_tot = 0.0;
+    size_t n_tot = 0;
+    int finish = 0;
+    for (it = 0; it < itmx && finish == 0; it++) {
         int ncalls_total = 0;
         clock_t t_start = clock();
         int i;
         for (i = 0; i < ndim * nbin; i++) {
             istate.xi->m[i] = state->xi->m[i];
         }
+        for (i = 0; i < ndim * nbin; i++) {
+            istate.max->m[i] = state->max->m[i];
+        }
         MPI_Bcast(state->xi->m, ndim * nbin, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+        MPI_Bcast(state->max->m, ndim * nbin, MPI_DOUBLE, 0, MPI_COMM_WORLD);
         istate.fb = 0.0;
+        istate.fbabs = 0.0;
         istate.f2b = 0.0;
         struct Matrix *d = istate.d;
         struct Matrix *di = istate.di;
@@ -529,15 +658,19 @@ static void master(struct VegasState *state, int rank, int num_procs, int ncall,
         integration(&istate, worker_ncall, additional, ndim, nbin, rank,
                     num_procs, rnd, fxn, userdata);
         double fb = istate.fb;
+        double fbabs = istate.fbabs;
         double f2b = istate.f2b;
         ncalls_total += istate.ncalls;
         state->ncalls_last_it += istate.ncalls;
         for (i = 1; i < num_procs; i++) {
             MPI_Status status;
             double fb_add;
+            double fbabs_add;
             double f2b_add;
             int ncalls_worker;
             MPI_Recv(&fb_add, 1, MPI_DOUBLE, i, VEGAS_MPI_TAG, MPI_COMM_WORLD,
+                     &status);
+            MPI_Recv(&fbabs_add, 1, MPI_DOUBLE, i, VEGAS_MPI_TAG, MPI_COMM_WORLD,
                      &status);
             MPI_Recv(&f2b_add, 1, MPI_DOUBLE, i, VEGAS_MPI_TAG, MPI_COMM_WORLD,
                      &status);
@@ -545,18 +678,56 @@ static void master(struct VegasState *state, int rank, int num_procs, int ncall,
                      MPI_COMM_WORLD, &status);
             MPI_Recv(d_add->m, nbin * ndim, MPI_DOUBLE, i, VEGAS_MPI_TAG,
                      MPI_COMM_WORLD, &status);
-            MPI_Recv(&ncalls_worker, 1, MPI_INT, i, VEGAS_MPI_TAG, MPI_COMM_WORLD,
-                     &status);
+            MPI_Recv(&ncalls_worker, 1, MPI_INT, i, VEGAS_MPI_TAG,
+                     MPI_COMM_WORLD, &status);
+
+            MPI_Recv(max->m, nbin * ndim, MPI_DOUBLE, i, VEGAS_MPI_TAG,
+                     MPI_COMM_WORLD, &status);
+            int k;
+            for (k = 0; k < nbin * ndim; k++) {
+                if (max->m[k] > state->max->m[k]) {
+                    state->max->m[k] = max->m[k];
+                }
+            }
 
             fb += fb_add;
+            fbabs += fbabs_add;
             f2b += f2b_add;
             matrix_add(di, di_add);
             matrix_add(d, d_add);
             state->ncalls_last_it += ncalls_worker;
             ncalls_total += ncalls_worker;
         }
-        double jac = 1.0/((double)ncalls_total);
+        fb_tot += fb;
+        f2b_tot += f2b;
+        n_tot += ncalls_total;
+
+        double jac_tot = 1.0 / ((double)n_tot);
+        double dv2g_tot = 1.0 / (n_tot - 1.0);
+
+        double integral_tot = jac_tot * fb_tot;
+        double err = f2b_tot * jac_tot * jac_tot;
+        double err2 = sqrt(err * n_tot);
+        double err3 = (err2 - integral_tot) * (err2 + integral_tot);
+        double sigma_tot = sqrt(err3 * dv2g_tot);
+
+        double jac = 1.0 / ((double)ncalls_total);
         double dv2g = 1.0 / (ncalls_total - 1.0);
+
+        // integral of the absolute value
+        double integral_abs = fbabs * jac;
+        double f2babs = sqrt(f2b * jac * jac * ncalls_total);
+        double errabs = (f2babs - integral_abs) * (f2babs + integral_abs);
+        if (errabs <= 0.0) {
+            errabs = TINY;
+        }
+        double sigma_abs = errabs * dv2g;
+        double wgt_abs = 1.0 / sigma_abs;
+        state->siabs += wgt_abs * integral_abs;
+        state->schiabs += wgt_abs * integral_abs * integral_abs;
+        state->swgtabs += wgt_abs;
+
+        // normal integral
         fb *= jac;
         f2b *= jac * jac;
         matrix_mul_factor(di, jac);
@@ -573,7 +744,9 @@ static void master(struct VegasState *state, int rank, int num_procs, int ncall,
         state->schi += wgt * integral_it * integral_it;
         state->swgt += wgt;
         *tgral = state->si / state->swgt;
-        *chi2_ndf = (state->schi - state->si * *tgral) / (it + 0.0001);
+        state->iterations += 1;
+        double ndf = state->iterations - 1.0;
+        *chi2_ndf = (state->schi - state->si * *tgral) / (ndf + 1e-6);
         if (*chi2_ndf < 0.0) {
             *chi2_ndf = 0.0;
         }
@@ -599,8 +772,17 @@ static void master(struct VegasState *state, int rank, int num_procs, int ncall,
         if (verbosity > 0) {
             printf("integral: %g +- %g (chi^2/ndf = %g)\n", *tgral, *sd,
                    *chi2_ndf);
-            if(verbosity > 1) {
-                printf("    last it = %d: %g +- %g\n", it + 1, integral_it, sigma_it);
+            if (verbosity > 1) {
+                printf("    last it = %d: %g +- %g\n", it + 1, integral_it,
+                       sigma_it);
+                printf("    total integral: %g +- %g\n", integral_tot,
+                       sigma_tot);
+                double intabs = 0.0;
+                double errabs = 0.0;
+                double chi2abs = 0.0;
+                vegas_get_integralabs(state, &intabs, &errabs, &chi2abs);
+                printf("    abs integral: %g +- %g (chi^2/ndf = %g)\n", intabs,
+                       errabs, chi2abs);
                 double p_rej =
                     ((double)ncall) / ((double)(ncalls_total)) * 100.0;
                 printf("    requested points: %d, sampled points: %d used %2.f "
@@ -617,8 +799,23 @@ static void master(struct VegasState *state, int rank, int num_procs, int ncall,
             printf("    iteration %d, progress = %.1f%% (%s)\n", it + 1,
                    100.0 * (it + 1) / itmx, time_buffer);
         }
+        double abserror = state->abserror;
+        double relerror = state->relerror;
+        if (state->refine_grid && *tgral == 0.0) {
+          printf( "  integral seems to be zero. stopping integration...\n");
+          finish = 1;
+        }
+        if (*sd < abserror ||
+            (*tgral != 0.0 && *sd / fabs(*tgral) < relerror)) {
+            finish = 1;
+            printf("  requested accuracy reached.\n");
+            printf("     requested abserror: %g\n", abserror);
+            printf("     requested relerror: %g\n", relerror);
+        }
+        MPI_Bcast(&finish, 1, MPI_INT, 0, MPI_COMM_WORLD);
+
         /* refine grid */
-        if (state->refine_grid) {
+        if (state->refine_grid && finish == 0) {
             int j;
             for (j = 0; j < ndim; j++) {
                 double xo = matrix_get(d, 0, j);
@@ -638,6 +835,7 @@ static void master(struct VegasState *state, int rank, int num_procs, int ncall,
             for (j = 0; j < ndim; j++) {
                 double rc = 0.0;
                 for (i = 0; i < nbin; i++) {
+                    matrix_set(state->max, j, i, 2.0);
                     double dij = matrix_get(d, i, j);
                     if (dij < TINY) {
                         matrix_set(d, i, j, TINY);
@@ -660,6 +858,7 @@ static void master(struct VegasState *state, int rank, int num_procs, int ncall,
     dt = NULL;
     matrix_free(d_add);
     matrix_free(di_add);
+    matrix_free(max);
     free(buffer);
     buffer = NULL;
     free(buffer);
@@ -679,6 +878,8 @@ int vegas_integrate(struct VegasState *state, int seed, vegas_integrand fxn,
     assert(state->generators != NULL &&
            "You must use vegas_seed_random before calling vegas_integrate");
 
+    vegas_reset_max(state);
+
     int worker_ncall = ncall / num_procs;
     int additional = ncall % num_procs;
     state->ncalls_last_it = 0;
@@ -691,6 +892,23 @@ int vegas_integrate(struct VegasState *state, int seed, vegas_integrand fxn,
                additional, itmx, fxn, userdata, &state->random, seed,
                state->msg_after_it, state->after_it_bufferlen);
     }
+
+    double msg[9] = {state->si,    state->schi,   state->swgt,
+                     state->siabs, state->schiabs, state->swgtabs,
+                     *tgral,       *sd,           *chi2_ndf};
+    MPI_Bcast(&msg[0], 9, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+    if (rank != 0) {
+        state->si = msg[0];
+        state->schi = msg[1];
+        state->swgt = msg[2];
+        state->siabs = msg[3];
+        state->schiabs = msg[4];
+        state->swgtabs = msg[5];
+        *tgral = msg[6];
+        *sd = msg[7];
+        *chi2_ndf = msg[8];
+    }
+    MPI_Bcast(&state->iterations, 1, MPI_INT, 0, MPI_COMM_WORLD);
+
     return 0;
 }
-

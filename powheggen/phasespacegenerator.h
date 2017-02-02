@@ -1,6 +1,8 @@
 #ifndef PHASESPACEGENERATOR_H_AUI98SU1
 #define PHASESPACEGENERATOR_H_AUI98SU1
 
+#include <memory>
+
 #include "phasespace/phasespace.h"
 
 namespace UserProcess {

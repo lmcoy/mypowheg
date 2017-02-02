@@ -10,12 +10,15 @@ namespace {
 class LIB_LOCAL ISR {
   public:
     static double XiMax(const Phasespace::Phasespace &ps_born, int j) {
-        assert(j == 0);
+        assert(j < 2);
         return 1.0 - ps_born.X1 * ps_born.X2;
     }
 
-    static double PT2Max(double ximax, double sb) {
-        return sb / 4.0 * ximax * ximax / (1.0 - ximax);
+    static double PT2Max(const Phasespace::Phasespace &ps_born, double ximax, double sb) {
+        double x1 = ps_born.X1;
+        double x2 = ps_born.X2;
+        double f = (1.0 - x1 * x1) * (1.0 - x2 * x2) / (x1 + x2) / (x1 + x2);
+        return sb * f;
     }
 
     static double UpperBounding(double N, double xi, double y, double alpha) {

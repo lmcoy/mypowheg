@@ -17,6 +17,7 @@ struct LIB_LOCAL Radiation {
     const FKS::Real_t * Real;
     double kT2 = 0.0;
     int j = 0;
+    int i = 0;
 };
 
 enum class RadiationType {

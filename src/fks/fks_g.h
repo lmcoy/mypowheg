@@ -9,6 +9,7 @@ class Phasespace;
 
 namespace UserProcess {
 struct Data;
+class SpinCorrelated;
 }
 
 namespace Util {
@@ -34,10 +35,13 @@ namespace QED {
  *
  * @see QED::SxG
  */
-LIB_LOCAL FKS::MatrixElement
-Limits(const Real_t &real, const FKS::Phasespaces &PS, double bornme,
-       const Util::Matrix2 &collcorr, const Region &region, double x,
-       const FKS::Xi &Xi, double y, double phi, const UserProcess::Data *);
+LIB_LOCAL FKS::MatrixElement Limits(const Real_t &real,
+                                    const FKS::Phasespaces &PS, double bornme,
+                                    const Util::Matrix2 &collcorr,
+                                    const UserProcess::SpinCorrelated &spincorr,
+                                    const Region &region, double x,
+                                    const FKS::Xi &Xi, double y, double phi,
+                                    const UserProcess::Data *);
 
 /**
  * @brief FKS subtracted real EW matrix element
@@ -51,6 +55,7 @@ Limits(const Real_t &real, const FKS::Phasespaces &PS, double bornme,
  */
 LIB_LOCAL double SxG(const Real_t &real, const FKS::Phasespaces &PS,
                      double bornme, const Util::Matrix2 &collcorr,
+                     const UserProcess::SpinCorrelated &spincorr,
                      const Region &region, double xi, double y, double phi,
                      const UserProcess::Data *);
 
@@ -62,13 +67,16 @@ namespace QCD {
  * @brief limits of FKS subtracted real QCD matrix element
  *
  * Limits returns the soft, collinear and soft/collinear limits of SxG().
- * 
+ *
  * @see QCD::SxG
  */
-LIB_LOCAL FKS::MatrixElement
-Limits(const Real_t &real, const FKS::Phasespaces &PS, double bornme,
-       const Util::Matrix2 &collcorr, const Region &region, double x,
-       const FKS::Xi &Xi, double y, double phi, const UserProcess::Data *);
+LIB_LOCAL FKS::MatrixElement Limits(const Real_t &real,
+                                    const FKS::Phasespaces &PS, double bornme,
+                                    const Util::Matrix2 &collcorr,
+                                    const UserProcess::SpinCorrelated &spincorr,
+                                    const Region &region, double x,
+                                    const FKS::Xi &Xi, double y, double phi,
+                                    const UserProcess::Data *);
 
 /**
  * @brief FKS subtracted real QCD matrix element
@@ -82,6 +90,7 @@ Limits(const Real_t &real, const FKS::Phasespaces &PS, double bornme,
  */
 LIB_LOCAL double SxG(const Real_t &real, const FKS::Phasespaces &PS,
                      double bornme, const Util::Matrix2 &collcorr,
+                     const UserProcess::SpinCorrelated &spincorr,
                      const Region &region, double xi, double y, double phi,
                      const UserProcess::Data *);
 
@@ -90,4 +99,3 @@ LIB_LOCAL double SxG(const Real_t &real, const FKS::Phasespaces &PS,
 } // end namespace FKS
 
 #endif /* end of include guard: G_FSR_H_ */
-

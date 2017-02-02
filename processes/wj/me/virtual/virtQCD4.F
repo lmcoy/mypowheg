@@ -1,0 +1,1166 @@
+      subroutine virtQCD4(amp,resnr)
+      implicit character (a-f,h-s,u-z)
+      implicit double complex (t)
+      implicit integer (g)
+
+#include "params.h" 
+
+      integer helnr,colnr,resnr,procnr
+
+      double complex amp(nproc,ncol,nhel)
+
+      double precision Alfas,Alfas2,GS
+
+      common /my_alfas_common/Alfas,Alfas2,GS
+#include "amps/ampvars.h" 
+#include "amps/ampcom.h" 
+
+*The Amplitude is evaluated as amp(procnr,colnr,helnr), where
+*
+*   Resonances:
+*     resnr=0:   non-resonant
+*
+*   Partonic Subprocesses:
+*     procnr=1:   { up  , ~do  ,  ve  , ~el  ,  gl  }
+*     procnr=2:   { up  ,  ga  ,  ve  , ~el  ,  do  }
+*     procnr=3:   { up  ,  gl  ,  ve  , ~el  ,  do  }
+*     procnr=4:   {~do  ,  ga  ,  ve  , ~el  , ~up  }
+*     procnr=5:   {~do  ,  gl  ,  ve  , ~el  , ~up  }
+*
+*   Helicities:
+*     helnr=1:   {-1, 1, -1, 1, -1}
+*     helnr=2:   {-1, 1, -1, 1, 1}
+*     helnr=3:   {-1, -1, -1, 1, -1}
+*     helnr=4:   {1, -1, -1, 1, 1}
+*     helnr=5:   {1, 1, -1, 1, 1}
+*
+*   Color Structures:
+*     colnr=1:   SUNT[Glu1, Col2, Col1]
+*     colnr=2:   SUNT[Col1, Col2]
+*     colnr=3:   SUNT[Glu1, Col1, Col2]
+
+
+      if(resnr.eq.0)then
+
+	tmp1097 = WProd190 - WProd191 + WProd192*WProd193 - WProd194
+        tmp1098 = WProd196 - WProd197 - WProd198 - WProd199 - 
+     -   WProd200 + WProd201
+        tmp1099 = 2*WProd196 - WProd197 - WProd198 - WProd199 - 
+     -   WProd200 + WProd201
+        tmp1100 = 3*WProd196 - 3*WProd197 - 3*WProd198 - 
+     -   2*WProd199 - 2*WProd200 + 2*WProd201
+        tmp1101 = WProd196 - 2*WProd197 - 2*WProd198 - 
+     -   WProd199 - WProd200 + 2*WProd201
+        tmp1102 = WProd190 + WProd192*WProd193 - WProd203 + 
+     -   WProd193*WProd204
+        tmp1103 = WProd190 + WProd192*WProd193 - WProd203 + 
+     -   WProd193*WProd204 - WProd193*WProd205
+        tmp1104 = 2.5141574442188355D0*
+     -    (Alfas*Cpl4*LInt303*tmp1103*
+     -      (WProd196 - WProd197 - WProd198)) + 
+     -   1.2570787221094177D0*
+     -    (Alfas*Cpl4*LInt302*(WProd190 + WProd202)) - 
+     -   1.2570787221094177D0*
+     -    (Alfas*Cpl4*LInt327*tmp1098*(WProd190 - WProd203)) - 
+     -   2.5141574442188355D0*
+     -    (Alfas*Cpl4*LInt309*(WProd190 + WProd203)) + 
+     -   2.5141574442188355D0*
+     -    (Alfas*Cpl4*LInt297*WProd193*(WProd192 + WProd204)) - 
+     -   2.5141574442188355D0*
+     -    (Alfas*Cpl4*LInt311*
+     -      (WProd190 - WProd192*WProd193 - WProd193*WProd204)) + 
+     -   1.2570787221094177D0*
+     -    (Alfas*Cpl4*LInt298*
+     -      (2*WProd190 + WProd192*WProd193 + WProd202 - 
+     -        WProd203 + WProd193*WProd204)) - 
+     -   2.5141574442188355D0*
+     -    (Alfas*Cpl4*LInt328*tmp1100*WProd193*
+     -      (-WProd192 - WProd204 + WProd205)) - 
+     -   1.2570787221094177D0*
+     -    (Alfas*Cpl4*LInt313*tmp1098*
+     -      (WProd190 + WProd192*WProd193 + 2*WProd202 + 
+     -        WProd193*WProd204 - 2*WProd193*WProd205)) + 
+     -   5.028314888437671D0*
+     -    (Alfas*Cpl4*LInt304*
+     -      (2*WProd190 + 2*WProd202 - WProd203 - 
+     -        WProd193*WProd205)) + 
+     -   2.5141574442188355D0*
+     -    (Alfas*Cpl4*LInt299*
+     -      (WProd192*WProd193 + WProd202 + WProd193*WProd204 - 
+     -        WProd193*WProd205)) + 
+     -   2.5141574442188355D0*
+     -    (Alfas*Cpl4*LInt301*
+     -      (WProd190 + WProd192*WProd193 + WProd202 + 
+     -        WProd193*WProd204 - WProd193*WProd205)) - 
+     -   2.5141574442188355D0*
+     -    (Alfas*Cpl4*LInt305*
+     -      (3*WProd190 + WProd192*WProd193 + WProd202 - 
+     -        2*WProd203 + WProd193*WProd204 - WProd193*WProd205))+
+     -     5.028314888437671D0*
+     -    (Alfas*Cpl4*LInt306*(WProd202 + WProd193*WProd205)) + 
+     -   2.5141574442188355D0*
+     -    (Alfas*Cpl4*LInt307*(WProd202 + WProd193*WProd205)) + 
+     -   1.2570787221094177D0*
+     -    (Alfas*Cpl4*LInt300*(WProd203 + WProd193*WProd205)) + 
+     -   5.028314888437671D0*
+     -    (Alfas*Cpl4*LInt308*
+     -      (WProd190 - WProd192*WProd193 + WProd202 - 
+     -        WProd193*WProd204 + WProd193*WProd205)) + 
+     -   5.028314888437671D0*
+     -    (Alfas*Cpl4*LInt310*
+     -      (-(WProd192*WProd193) + WProd202 - WProd203 - 
+     -        WProd193*WProd204 + WProd193*WProd205)) - 
+     -   2.5141574442188355D0*
+     -    (Alfas*Cpl4*LInt326*
+     -      (-3*WProd190*WProd196 - 4*WProd192*WProd193*WProd196 + 
+     -        3*WProd190*WProd197 + 4*WProd192*WProd193*WProd197 + 
+     -        3*WProd190*WProd198 + 4*WProd192*WProd193*WProd198 + 
+     -        2*WProd190*WProd199 + 2*WProd192*WProd193*WProd199 + 
+     -        2*WProd190*WProd200 + 2*WProd192*WProd193*WProd200 - 
+     -        2*WProd190*WProd201 - 2*WProd192*WProd193*WProd201 + 
+     -        2*WProd196*WProd202 - 2*WProd197*WProd202 - 
+     -        2*WProd198*WProd202 - 2*WProd199*WProd202 - 
+     -        2*WProd200*WProd202 + 2*WProd201*WProd202 + 
+     -        3*WProd196*WProd203 - 3*WProd197*WProd203 - 
+     -        3*WProd198*WProd203 - 2*WProd199*WProd203 - 
+     -        2*WProd200*WProd203 + 2*WProd201*WProd203 - 
+     -        4*WProd193*WProd196*WProd204 + 
+     -        4*WProd193*WProd197*WProd204 + 
+     -        4*WProd193*WProd198*WProd204 + 
+     -        2*WProd193*WProd199*WProd204 + 
+     -        2*WProd193*WProd200*WProd204 - 
+     -        2*WProd193*WProd201*WProd204 + 
+     -        2*WProd193*WProd196*WProd205 - 
+     -        2*WProd193*WProd197*WProd205 - 
+     -        2*WProd193*WProd198*WProd205)) - 
+     -   2.5141574442188355D0*
+     -    (Alfas*Cpl4*LInt312*
+     -      (-(WProd190*WProd199) - WProd192*WProd193*WProd199 - 
+     -        WProd190*WProd200 - WProd192*WProd193*WProd200 + 
+     -        WProd190*WProd201 + WProd192*WProd193*WProd201 + 
+     -        3*WProd196*WProd202 - 3*WProd197*WProd202 - 
+     -        3*WProd198*WProd202 - 2*WProd199*WProd202 - 
+     -        2*WProd200*WProd202 + 2*WProd201*WProd202 + 
+     -        WProd196*WProd203 - WProd197*WProd203 - 
+     -        WProd198*WProd203 - WProd193*WProd199*WProd204 - 
+     -        WProd193*WProd200*WProd204 + 
+     -        WProd193*WProd201*WProd204 - 
+     -        WProd193*WProd196*WProd205 + 
+     -        WProd193*WProd197*WProd205 + 
+     -        WProd193*WProd198*WProd205 + 
+     -        2*WProd193*WProd199*WProd205 + 
+     -        2*WProd193*WProd200*WProd205 - 
+     -        2*WProd193*WProd201*WProd205))
+        tmp1104 = tmp1104 - 
+     -   1.2570787221094177D0*
+     -    (Alfas*Cpl4*LInt315*
+     -      (WProd196*WProd202 - WProd197*WProd202 - 
+     -        WProd198*WProd202 - WProd199*WProd202 - 
+     -        WProd200*WProd202 + WProd201*WProd202 - 
+     -        2*WProd193*WProd196*WProd205 + 
+     -        2*WProd193*WProd197*WProd205 + 
+     -        2*WProd193*WProd198*WProd205 + 
+     -        WProd193*WProd199*WProd205 + 
+     -        WProd193*WProd200*WProd205 - 
+     -        WProd193*WProd201*WProd205)) - 
+     -   2.5141574442188355D0*
+     -    (Alfas*Cpl4*LInt314*
+     -      (WProd199*WProd202 + WProd200*WProd202 - 
+     -        WProd201*WProd202 + WProd193*WProd196*WProd205 - 
+     -        WProd193*WProd197*WProd205 - 
+     -        WProd193*WProd198*WProd205 - 
+     -        WProd193*WProd199*WProd205 - 
+     -        WProd193*WProd200*WProd205 + 
+     -        WProd193*WProd201*WProd205)) - 
+     -   1.2570787221094177D0*
+     -    (Alfas*Cpl4*LInt316*WProd205*WProd207) - 
+     -   2.5141574442188355D0*
+     -    (Alfas*Cpl4*LInt317*WProd205*WProd207) - 
+     -   2.5141574442188355D0*
+     -    (Alfas*Cpl4*LInt339*(-WProd192 - WProd204 + WProd205)*
+     -      WProd207) - 2.5141574442188355D0*
+     -    (Alfas*Cpl4*LInt325*(-WProd192 - WProd204 + 2*WProd205)*
+     -      WProd207) - 2.5141574442188355D0*
+     -    (Alfas*Cpl4*LInt335*
+     -      (-2*WProd190*WProd196 - 2*WProd192*WProd193*WProd196 + 
+     -        3*WProd190*WProd197 + 4*WProd192*WProd193*WProd197 + 
+     -        3*WProd190*WProd198 + 4*WProd192*WProd193*WProd198 + 
+     -        WProd190*WProd199 + WProd192*WProd193*WProd199 + 
+     -        WProd190*WProd200 + WProd192*WProd193*WProd200 - 
+     -        2*WProd190*WProd201 - 2*WProd192*WProd193*WProd201 + 
+     -        WProd196*WProd202 - 2*WProd197*WProd202 - 
+     -        2*WProd198*WProd202 - WProd199*WProd202 - 
+     -        WProd200*WProd202 + 2*WProd201*WProd202 + 
+     -        3*WProd196*WProd203 - 3*WProd197*WProd203 - 
+     -        3*WProd198*WProd203 - 2*WProd199*WProd203 - 
+     -        2*WProd200*WProd203 + 2*WProd201*WProd203 - 
+     -        2*WProd193*WProd196*WProd204 + 
+     -        4*WProd193*WProd197*WProd204 + 
+     -        4*WProd193*WProd198*WProd204 + 
+     -        WProd193*WProd199*WProd204 + 
+     -        WProd193*WProd200*WProd204 - 
+     -        2*WProd193*WProd201*WProd204 + 
+     -        WProd193*WProd196*WProd205 - 
+     -        2*WProd193*WProd197*WProd205 - 
+     -        2*WProd193*WProd198*WProd205 - 2*WProd192*WProd207 - 
+     -        2*WProd204*WProd207 + 2*WProd205*WProd207)) - 
+     -   2.5141574442188355D0*
+     -    (Alfas*Cpl4*LInt337*
+     -      (-(WProd192*WProd193*WProd196) + 2*WProd190*WProd197 + 
+     -        3*WProd192*WProd193*WProd197 + 2*WProd190*WProd198 + 
+     -        3*WProd192*WProd193*WProd198 + 
+     -        WProd192*WProd193*WProd199 + 
+     -        WProd192*WProd193*WProd200 - 2*WProd190*WProd201 - 
+     -        2*WProd192*WProd193*WProd201 - 
+     -        WProd193*WProd196*WProd204 + 
+     -        3*WProd193*WProd197*WProd204 + 
+     -        3*WProd193*WProd198*WProd204 + 
+     -        WProd193*WProd199*WProd204 + 
+     -        WProd193*WProd200*WProd204 - 
+     -        2*WProd193*WProd201*WProd204 + 
+     -        WProd193*WProd196*WProd205 - 
+     -        3*WProd193*WProd197*WProd205 - 
+     -        3*WProd193*WProd198*WProd205 - 
+     -        WProd193*WProd199*WProd205 - 
+     -        WProd193*WProd200*WProd205 + 
+     -        2*WProd193*WProd201*WProd205 - 3*WProd192*WProd207 - 
+     -        3*WProd204*WProd207 + 3*WProd205*WProd207)) - 
+     -   2.5141574442188355D0*
+     -    (Alfas*Cpl4*LInt323*
+     -      (-(WProd192*WProd193*WProd196) + WProd190*WProd197 + 
+     -        2*WProd192*WProd193*WProd197 + WProd190*WProd198 + 
+     -        2*WProd192*WProd193*WProd198 + 
+     -        WProd192*WProd193*WProd199 + 
+     -        WProd192*WProd193*WProd200 - 
+     -        WProd192*WProd193*WProd201 - WProd197*WProd202 - 
+     -        WProd198*WProd202 + WProd199*WProd202 + 
+     -        WProd200*WProd202 + WProd201*WProd202 - 
+     -        WProd193*WProd196*WProd204 + 
+     -        2*WProd193*WProd197*WProd204 + 
+     -        2*WProd193*WProd198*WProd204 + 
+     -        WProd193*WProd199*WProd204 + 
+     -        WProd193*WProd200*WProd204 - 
+     -        WProd193*WProd201*WProd204 + 
+     -        2*WProd193*WProd196*WProd205 - 
+     -        3*WProd193*WProd197*WProd205 - 
+     -        3*WProd193*WProd198*WProd205 - 
+     -        2*WProd193*WProd199*WProd205 - 
+     -        2*WProd193*WProd200*WProd205 + 
+     -        WProd193*WProd201*WProd205 - 2*WProd192*WProd207 - 
+     -        2*WProd204*WProd207 + 3*WProd205*WProd207)) + 
+     -   1.2570787221094177D0*
+     -    (Alfas*Cpl4*LInt330*(WProd192 + WProd204)*WProd208) + 
+     -   1.2570787221094177D0*
+     -    (Alfas*Cpl4*LInt334*(WProd192 + WProd204)*WProd208) + 
+     -   1.2570787221094177D0*
+     -    (Alfas*Cpl4*LInt320*WProd205*WProd208) - 
+     -   2.5141574442188355D0*
+     -    (Alfas*Cpl4*LInt329*(-WProd192 - WProd204 + WProd205)*
+     -      (WProd207 + WProd208))
+        tmp1104 = tmp1104 - 
+     -   2.5141574442188355D0*
+     -    (Alfas*Cpl4*LInt333*(-WProd192 - WProd204 + WProd205)*
+     -      (2*WProd207 + WProd208)) - 
+     -   1.2570787221094177D0*
+     -    (Alfas*Cpl4*LInt322*
+     -      (WProd192*WProd207 + WProd204*WProd207 - 
+     -        WProd205*WProd208)) + 
+     -   1.2570787221094177D0*
+     -    (Alfas*Cpl4*LInt338*
+     -      (-(WProd192*WProd193*WProd196) - WProd190*WProd197 - 
+     -        WProd190*WProd198 - WProd190*WProd199 + 
+     -        WProd192*WProd193*WProd199 - WProd190*WProd200 + 
+     -        WProd192*WProd193*WProd200 + WProd190*WProd201 - 
+     -        WProd192*WProd193*WProd201 - WProd199*WProd202 - 
+     -        WProd200*WProd202 - WProd193*WProd196*WProd204 + 
+     -        WProd193*WProd199*WProd204 + 
+     -        WProd193*WProd200*WProd204 - 
+     -        WProd193*WProd201*WProd204 + 
+     -        WProd193*WProd199*WProd205 + 
+     -        WProd193*WProd200*WProd205 + WProd192*WProd207 + 
+     -        WProd204*WProd207 + WProd205*WProd208)) + 
+     -   1.2570787221094177D0*
+     -    (Alfas*Cpl4*LInt336*
+     -      (-(WProd190*WProd196) - WProd192*WProd193*WProd197 - 
+     -        WProd192*WProd193*WProd198 - WProd190*WProd199 - 
+     -        WProd192*WProd193*WProd199 - WProd190*WProd200 - 
+     -        WProd192*WProd193*WProd200 + WProd190*WProd201 + 
+     -        WProd192*WProd193*WProd201 - WProd199*WProd202 - 
+     -        WProd200*WProd202 + WProd196*WProd203 - 
+     -        WProd197*WProd203 - WProd198*WProd203 - 
+     -        WProd193*WProd197*WProd204 - 
+     -        WProd193*WProd198*WProd204 - 
+     -        WProd193*WProd199*WProd204 - 
+     -        WProd193*WProd200*WProd204 + 
+     -        WProd193*WProd201*WProd204 + 
+     -        WProd193*WProd199*WProd205 + 
+     -        WProd193*WProd200*WProd205 + WProd192*WProd207 + 
+     -        WProd204*WProd207 + WProd205*WProd208)) + 
+     -   1.2570787221094177D0*
+     -    (Alfas*Cpl4*LInt324*
+     -      (WProd192*WProd193*WProd196 - WProd190*WProd197 - 
+     -        2*WProd192*WProd193*WProd197 - WProd190*WProd198 - 
+     -        2*WProd192*WProd193*WProd198 - WProd190*WProd199 - 
+     -        WProd192*WProd193*WProd199 - WProd190*WProd200 - 
+     -        WProd192*WProd193*WProd200 + WProd190*WProd201 + 
+     -        WProd192*WProd193*WProd201 - WProd196*WProd202 + 
+     -        WProd197*WProd202 + WProd198*WProd202 - 
+     -        WProd201*WProd202 + WProd193*WProd196*WProd204 - 
+     -        2*WProd193*WProd197*WProd204 - 
+     -        2*WProd193*WProd198*WProd204 - 
+     -        WProd193*WProd199*WProd204 - 
+     -        WProd193*WProd200*WProd204 + 
+     -        WProd193*WProd201*WProd204 + 
+     -        2*WProd193*WProd199*WProd205 + 
+     -        2*WProd193*WProd200*WProd205 - 
+     -        WProd193*WProd201*WProd205 + WProd192*WProd207 + 
+     -        WProd204*WProd207 + WProd205*WProd208)) + 
+     -   2.5141574442188355D0*
+     -    (Alfas*Cpl4*LInt318*
+     -      (WProd192*WProd193*WProd196 - WProd190*WProd197 - 
+     -        2*WProd192*WProd193*WProd197 - WProd190*WProd198 - 
+     -        2*WProd192*WProd193*WProd198 - WProd190*WProd199 - 
+     -        WProd192*WProd193*WProd199 - WProd190*WProd200 - 
+     -        WProd192*WProd193*WProd200 + WProd190*WProd201 + 
+     -        WProd192*WProd193*WProd201 - WProd196*WProd202 + 
+     -        WProd197*WProd202 + WProd198*WProd202 - 
+     -        WProd201*WProd202 + WProd193*WProd196*WProd204 - 
+     -        2*WProd193*WProd197*WProd204 - 
+     -        2*WProd193*WProd198*WProd204 - 
+     -        WProd193*WProd199*WProd204 - 
+     -        WProd193*WProd200*WProd204 + 
+     -        WProd193*WProd201*WProd204 - 
+     -        3*WProd193*WProd196*WProd205 + 
+     -        3*WProd193*WProd197*WProd205 + 
+     -        3*WProd193*WProd198*WProd205 + 
+     -        2*WProd193*WProd199*WProd205 + 
+     -        2*WProd193*WProd200*WProd205 - 
+     -        WProd193*WProd201*WProd205 + WProd192*WProd207 + 
+     -        WProd204*WProd207 + WProd205*WProd208)) - 
+     -   2.5141574442188355D0*
+     -    (Alfas*Cpl4*LInt321*
+     -      (-(WProd192*WProd207) - WProd204*WProd207 + 
+     -        2*WProd205*WProd207 + WProd205*WProd208))
+        tmp1104 = tmp1104 - 
+     -   2.5141574442188355D0*
+     -    (Alfas*Cpl4*LInt331*
+     -      (-(WProd190*WProd196) - 4*WProd192*WProd193*WProd196 + 
+     -        2*WProd190*WProd197 + 6*WProd192*WProd193*WProd197 + 
+     -        2*WProd190*WProd198 + 6*WProd192*WProd193*WProd198 + 
+     -        WProd190*WProd199 + 3*WProd192*WProd193*WProd199 + 
+     -        WProd190*WProd200 + 3*WProd192*WProd193*WProd200 - 
+     -        2*WProd190*WProd201 - 4*WProd192*WProd193*WProd201 - 
+     -        4*WProd193*WProd196*WProd204 + 
+     -        6*WProd193*WProd197*WProd204 + 
+     -        6*WProd193*WProd198*WProd204 + 
+     -        3*WProd193*WProd199*WProd204 + 
+     -        3*WProd193*WProd200*WProd204 - 
+     -        4*WProd193*WProd201*WProd204 + 
+     -        4*WProd193*WProd196*WProd205 - 
+     -        6*WProd193*WProd197*WProd205 - 
+     -        6*WProd193*WProd198*WProd205 - 
+     -        3*WProd193*WProd199*WProd205 - 
+     -        3*WProd193*WProd200*WProd205 + 
+     -        4*WProd193*WProd201*WProd205 - 3*WProd192*WProd207 - 
+     -        3*WProd204*WProd207 + 3*WProd205*WProd207 - 
+     -        WProd192*WProd208 - WProd204*WProd208 + 
+     -        WProd205*WProd208)) + 
+     -   1.2570787221094177D0*
+     -    (Alfas*Cpl4*LInt332*
+     -      (-(WProd192*WProd193*WProd196) - WProd190*WProd197 - 
+     -        WProd190*WProd198 + WProd192*WProd193*WProd199 + 
+     -        WProd192*WProd193*WProd200 + WProd190*WProd201 - 
+     -        WProd199*WProd203 - WProd200*WProd203 - 
+     -        WProd193*WProd196*WProd204 + 
+     -        WProd193*WProd199*WProd204 + 
+     -        WProd193*WProd200*WProd204 + WProd192*WProd207 + 
+     -        WProd204*WProd207 + WProd192*WProd208 + 
+     -        WProd204*WProd208 + WProd205*WProd208)) + 
+     -   1.2570787221094177D0*
+     -    (Alfas*Cpl4*LInt319*
+     -      (WProd190*WProd196 - WProd190*WProd197 - 
+     -        WProd190*WProd198 - WProd190*WProd199 - 
+     -        WProd190*WProd200 + WProd190*WProd201 - 
+     -        WProd196*WProd203 - WProd193*WProd196*WProd205 + 
+     -        WProd193*WProd199*WProd205 + 
+     -        WProd193*WProd200*WProd205 + WProd205*WProd207 + 
+     -        2*WProd205*WProd208))
+        tmp1105 = tmp1104/WProd189 + 
+     -   (Prp35**2*(1.2570787221094177D0*
+     -         (Alfas*Cpl4*tmp1101*tmp1103) + 
+     -        2.5141574442188355D0*
+     -         (Alfas*Cpl4*LInt364*tmp1101*tmp1103)))/WProd189 + 
+     -   (Prp31*(-(1.8856180831641267D0*(Alfas*Cpl4*tmp1102)) + 
+     -        3.7712361663282534D0*(Alfas*Cpl4*LInt292*tmp1102) - 
+     -        7.542472332656507D0*(Alfas*Cpl4*LInt294*tmp1102) + 
+     -        3.7712361663282534D0*
+     -         (Alfas*Cpl4*LInt296*tmp1100*tmp1102) + 
+     -        3.7712361663282534D0*
+     -         (Alfas*Cpl4*LInt293*tmp1102*
+     -           (WProd196 - WProd197 - WProd198)) + 
+     -        3.7712361663282534D0*
+     -         (Alfas*Cpl4*LInt295*tmp1102*
+     -           (WProd196 - WProd197 - WProd198))))/WProd189 + 
+     -   (Prp34**2*(0.6285393610547089D0*
+     -         (Alfas*Cpl4*tmp1099*WProd193*WProd205) + 
+     -        1.2570787221094177D0*
+     -         (Alfas*Cpl4*LInt351*tmp1099*WProd193*WProd205)))/
+     -    WProd189 + (Prp35*
+     -      (-(2.5141574442188355D0*(Alfas*Cpl4*tmp1103)) + 
+     -        2.5141574442188355D0*(Alfas*Cpl4*LInt341*tmp1103) + 
+     -        2.5141574442188355D0*(Alfas*Cpl4*LInt352*tmp1103) - 
+     -        5.028314888437671D0*(Alfas*Cpl4*LInt354*tmp1103) - 
+     -        5.028314888437671D0*(Alfas*Cpl4*LInt355*tmp1103) - 
+     -        2.5141574442188355D0*
+     -         (Alfas*Cpl4*LInt357*tmp1098*WProd202) - 
+     -        2.5141574442188355D0*
+     -         (Alfas*Cpl4*LInt363*
+     -           (WProd196 - WProd199 - WProd200)*WProd202) - 
+     -        2.5141574442188355D0*
+     -         (Alfas*Cpl4*LInt359*
+     -           (2*WProd196 - WProd197 - WProd198 - 2*WProd199 - 
+     -             2*WProd200 + WProd201)*WProd202) - 
+     -        2.5141574442188355D0*
+     -         (Alfas*Cpl4*LInt360*tmp1101*(WProd190 - WProd203))+
+     -          5.028314888437671D0*
+     -         (Alfas*Cpl4*LInt362*tmp1098*WProd193*
+     -           (-WProd192 - WProd204 + WProd205)) + 
+     -        2.5141574442188355D0*
+     -         (Alfas*Cpl4*LInt358*WProd193*
+     -           (WProd196 - WProd199 - WProd200)*
+     -           (-WProd192 - WProd204 + WProd205)) - 
+     -        2.5141574442188355D0*
+     -         (Alfas*Cpl4*LInt353*
+     -           (WProd190*WProd197 + WProd192*WProd193*WProd197 + 
+     -             WProd190*WProd198 + 
+     -             WProd192*WProd193*WProd198 + 
+     -             WProd196*WProd202 - WProd199*WProd202 - 
+     -             WProd200*WProd202 - WProd197*WProd203 - 
+     -             WProd198*WProd203 + 
+     -             WProd193*WProd197*WProd204 + 
+     -             WProd193*WProd198*WProd204 - 
+     -             WProd193*WProd197*WProd205 - 
+     -             WProd193*WProd198*WProd205)) - 
+     -        2.5141574442188355D0*
+     -         (Alfas*Cpl4*LInt356*
+     -           (WProd190*WProd197 + WProd192*WProd193*WProd197 + 
+     -             WProd190*WProd198 + 
+     -             WProd192*WProd193*WProd198 + 
+     -             3*WProd196*WProd202 - 2*WProd197*WProd202 - 
+     -             2*WProd198*WProd202 - 3*WProd199*WProd202 - 
+     -             3*WProd200*WProd202 + 2*WProd201*WProd202 - 
+     -             WProd197*WProd203 - WProd198*WProd203 + 
+     -             WProd193*WProd197*WProd204 + 
+     -             WProd193*WProd198*WProd204 - 
+     -             WProd193*WProd197*WProd205 - 
+     -             WProd193*WProd198*WProd205)) - 
+     -        2.5141574442188355D0*
+     -         (Alfas*Cpl4*LInt361*
+     -           (-(WProd190*WProd196) - 
+     -             WProd192*WProd193*WProd196 + 
+     -             3*WProd190*WProd197 + 
+     -             3*WProd192*WProd193*WProd197 + 
+     -             3*WProd190*WProd198 + 
+     -             3*WProd192*WProd193*WProd198 + 
+     -             WProd190*WProd199 + 
+     -             WProd192*WProd193*WProd199 + 
+     -             WProd190*WProd200 + 
+     -             WProd192*WProd193*WProd200 - 
+     -             2*WProd190*WProd201 - 
+     -             2*WProd192*WProd193*WProd201 + 
+     -             2*WProd196*WProd202 - 2*WProd199*WProd202 - 
+     -             2*WProd200*WProd202 + WProd196*WProd203 - 
+     -             3*WProd197*WProd203 - 3*WProd198*WProd203 - 
+     -             WProd199*WProd203 - WProd200*WProd203 + 
+     -             2*WProd201*WProd203 - 
+     -             WProd193*WProd196*WProd204 + 
+     -             3*WProd193*WProd197*WProd204 + 
+     -             3*WProd193*WProd198*WProd204 + 
+     -             WProd193*WProd199*WProd204 + 
+     -             WProd193*WProd200*WProd204 - 
+     -             2*WProd193*WProd201*WProd204 + 
+     -             WProd193*WProd196*WProd205 - 
+     -             3*WProd193*WProd197*WProd205 - 
+     -             3*WProd193*WProd198*WProd205 - 
+     -             WProd193*WProd199*WProd205 - 
+     -             WProd193*WProd200*WProd205 + 
+     -             2*WProd193*WProd201*WProd205))))/WProd189
+        tmp1105 = tmp1105 + 
+     -   (Prp34*(-(1.2570787221094177D0*
+     -           (Alfas*Cpl4*LInt348*
+     -             (WProd197 + WProd198 + WProd199 + WProd200 - 
+     -               WProd201)*(WProd190 + WProd202))) - 
+     -        1.2570787221094177D0*
+     -         (Alfas*Cpl4*LInt350*
+     -           (WProd197 + WProd198 + WProd199 + WProd200 - 
+     -             WProd201)*(WProd190 + WProd202)) - 
+     -        1.2570787221094177D0*(Alfas*Cpl4*WProd193*WProd205) + 
+     -        1.2570787221094177D0*
+     -         (Alfas*Cpl4*LInt340*WProd193*WProd205) + 
+     -        1.2570787221094177D0*
+     -         (Alfas*Cpl4*LInt341*WProd193*WProd205) - 
+     -        2.5141574442188355D0*
+     -         (Alfas*Cpl4*LInt343*WProd193*WProd205) - 
+     -        2.5141574442188355D0*
+     -         (Alfas*Cpl4*LInt344*WProd193*WProd205) - 
+     -        1.2570787221094177D0*
+     -         (Alfas*Cpl4*LInt346*tmp1098*WProd193*WProd205) + 
+     -        1.2570787221094177D0*
+     -         (Alfas*Cpl4*LInt347*WProd193*WProd196*WProd205) - 
+     -        1.2570787221094177D0*
+     -         (Alfas*Cpl4*LInt345*
+     -           (WProd190*WProd197 + WProd190*WProd198 + 
+     -             WProd190*WProd199 + WProd190*WProd200 - 
+     -             WProd190*WProd201 + WProd197*WProd202 + 
+     -             WProd198*WProd202 + WProd199*WProd202 + 
+     -             WProd200*WProd202 - WProd201*WProd202 - 
+     -             4*WProd193*WProd196*WProd205 + 
+     -             3*WProd193*WProd197*WProd205 + 
+     -             3*WProd193*WProd198*WProd205 + 
+     -             3*WProd193*WProd199*WProd205 + 
+     -             3*WProd193*WProd200*WProd205 - 
+     -             2*WProd193*WProd201*WProd205)) - 
+     -        1.2570787221094177D0*
+     -         (Alfas*Cpl4*LInt349*
+     -           (2*WProd190*WProd197 + 2*WProd190*WProd198 + 
+     -             2*WProd190*WProd199 + 2*WProd190*WProd200 - 
+     -             2*WProd190*WProd201 + 2*WProd197*WProd202 + 
+     -             2*WProd198*WProd202 + 2*WProd199*WProd202 + 
+     -             2*WProd200*WProd202 - 2*WProd201*WProd202 - 
+     -             4*WProd193*WProd196*WProd205 + 
+     -             2*WProd193*WProd197*WProd205 + 
+     -             2*WProd193*WProd198*WProd205 + 
+     -             2*WProd193*WProd199*WProd205 + 
+     -             2*WProd193*WProd200*WProd205 - 
+     -             WProd193*WProd201*WProd205)) - 
+     -        1.2570787221094177D0*
+     -         (Alfas*Cpl4*LInt342*
+     -           (WProd190*WProd197 + WProd190*WProd198 + 
+     -             WProd190*WProd199 + WProd190*WProd200 - 
+     -             WProd190*WProd201 + WProd197*WProd202 + 
+     -             WProd198*WProd202 + WProd199*WProd202 + 
+     -             WProd200*WProd202 - WProd201*WProd202 - 
+     -             WProd193*WProd197*WProd205 - 
+     -             WProd193*WProd198*WProd205 - 
+     -             WProd193*WProd199*WProd205 - 
+     -             WProd193*WProd200*WProd205 + 
+     -             2*WProd193*WProd201*WProd205))))/WProd189
+        amp(4,2,4) = Prp33*tmp1105 + 
+     -   (Prp31*Prp32*(-(1.8856180831641267D0*
+     -           (Alfas*Cpl4*tmp1097)) + 
+     -        3.7712361663282534D0*(Alfas*Cpl4*LInt292*tmp1097) - 
+     -        7.542472332656507D0*(Alfas*Cpl4*LInt294*tmp1097) + 
+     -        3.7712361663282534D0*
+     -         (Alfas*Cpl4*LInt296*tmp1097*tmp1100) + 
+     -        3.7712361663282534D0*
+     -         (Alfas*Cpl4*LInt293*tmp1097*
+     -           (WProd196 - WProd197 - WProd198)) + 
+     -        3.7712361663282534D0*
+     -         (Alfas*Cpl4*LInt295*tmp1097*
+     -           (WProd196 - WProd197 - WProd198))))/WProd189
+
+#ifdef DEBUG
+	print *, 'amp(4,2,4) =', amp(4,2,4)
+#endif
+
+        tmp1106 = WProd196 - WProd197 - WProd198 - WProd199 - 
+     -   WProd200 + WProd201
+        tmp1107 = 2*WProd196 - WProd197 - WProd198 - WProd199 - 
+     -   WProd200 + WProd201
+        tmp1108 = 3*WProd196 - 3*WProd197 - 3*WProd198 - 
+     -   2*WProd199 - 2*WProd200 + 2*WProd201
+        tmp1109 = WProd196 - 2*WProd197 - 2*WProd198 - 
+     -   WProd199 - WProd200 + 2*WProd201
+        tmp1110 = WProd210 - WProd211 + WProd193*WProd212 + 
+     -   WProd213 - WProd214
+        tmp1111 = -WProd210 - WProd193*WProd212 + WProd215 - 
+     -   WProd193*WProd217
+        tmp1112 = -WProd210 - WProd193*WProd212 + WProd215 - 
+     -   WProd193*WProd217 + WProd218 + WProd193*WProd219
+        tmp1113 = -(2.5141574442188355D0*
+     -      (Alfas*Cpl4*LInt303*tmp1112*
+     -        (WProd196 - WProd197 - WProd198))) - 
+     -   2.5141574442188355D0*
+     -    (Alfas*Cpl4*LInt309*(WProd210 + WProd215)) + 
+     -   1.2570787221094177D0*
+     -    (Alfas*Cpl4*LInt302*(WProd210 + WProd216)) + 
+     -   1.2570787221094177D0*
+     -    (Alfas*Cpl4*LInt330*WProd208*(WProd212 + WProd217)) + 
+     -   1.2570787221094177D0*
+     -    (Alfas*Cpl4*LInt334*WProd208*(WProd212 + WProd217)) - 
+     -   2.5141574442188355D0*
+     -    (Alfas*Cpl4*LInt311*
+     -      (WProd210 - WProd193*WProd212 - WProd193*WProd217)) - 
+     -   1.2570787221094177D0*
+     -    (Alfas*Cpl4*LInt298*
+     -      (-2*WProd210 - WProd193*WProd212 + WProd215 - 
+     -        WProd216 - WProd193*WProd217 + WProd218)) + 
+     -   2.5141574442188355D0*
+     -    (Alfas*Cpl4*LInt297*
+     -      (WProd193*WProd212 + WProd193*WProd217 + WProd218)) + 
+     -   1.2570787221094177D0*
+     -    (Alfas*Cpl4*LInt327*tmp1106*
+     -      (-WProd210 + WProd215 + 3*WProd218)) - 
+     -   1.2570787221094177D0*
+     -    (Alfas*Cpl4*LInt316*WProd207*WProd219) - 
+     -   2.5141574442188355D0*
+     -    (Alfas*Cpl4*LInt317*WProd207*WProd219) + 
+     -   1.2570787221094177D0*
+     -    (Alfas*Cpl4*LInt320*WProd208*WProd219) - 
+     -   2.5141574442188355D0*
+     -    (Alfas*Cpl4*LInt328*tmp1108*WProd193*
+     -      (-WProd212 - WProd217 + WProd219)) - 
+     -   2.5141574442188355D0*
+     -    (Alfas*Cpl4*LInt339*WProd207*
+     -      (-WProd212 - WProd217 + WProd219)) - 
+     -   2.5141574442188355D0*
+     -    (Alfas*Cpl4*LInt329*(WProd207 + WProd208)*
+     -      (-WProd212 - WProd217 + WProd219)) - 
+     -   2.5141574442188355D0*
+     -    (Alfas*Cpl4*LInt333*(2*WProd207 + WProd208)*
+     -      (-WProd212 - WProd217 + WProd219)) - 
+     -   2.5141574442188355D0*
+     -    (Alfas*Cpl4*LInt325*WProd207*
+     -      (-WProd212 - WProd217 + 2*WProd219)) - 
+     -   5.028314888437671D0*
+     -    (Alfas*Cpl4*LInt310*
+     -      (WProd193*WProd212 + WProd215 - WProd216 + 
+     -        WProd193*WProd217 - WProd193*WProd219)) + 
+     -   2.5141574442188355D0*
+     -    (Alfas*Cpl4*LInt299*
+     -      (WProd193*WProd212 + WProd216 + WProd193*WProd217 - 
+     -        WProd193*WProd219)) + 
+     -   2.5141574442188355D0*
+     -    (Alfas*Cpl4*LInt301*
+     -      (WProd210 + WProd193*WProd212 + WProd216 + 
+     -        WProd193*WProd217 - WProd218 - WProd193*WProd219)) + 
+     -   5.028314888437671D0*
+     -    (Alfas*Cpl4*LInt306*(WProd216 + WProd193*WProd219)) + 
+     -   2.5141574442188355D0*
+     -    (Alfas*Cpl4*LInt307*(WProd216 + WProd193*WProd219)) + 
+     -   5.028314888437671D0*
+     -    (Alfas*Cpl4*LInt308*
+     -      (WProd210 - WProd193*WProd212 + WProd216 - 
+     -        WProd193*WProd217 + WProd193*WProd219)) + 
+     -   1.2570787221094177D0*
+     -    (Alfas*Cpl4*LInt300*
+     -      (WProd215 + WProd218 + WProd193*WProd219)) - 
+     -   5.028314888437671D0*
+     -    (Alfas*Cpl4*LInt304*
+     -      (-2*WProd210 + WProd215 - 2*WProd216 + 3*WProd218 + 
+     -        WProd193*WProd219)) + 
+     -   2.5141574442188355D0*
+     -    (Alfas*Cpl4*LInt305*
+     -      (-3*WProd210 - WProd193*WProd212 + 2*WProd215 - 
+     -        WProd216 - WProd193*WProd217 + 3*WProd218 + 
+     -        WProd193*WProd219))
+        tmp1113 = tmp1113 - 
+     -   2.5141574442188355D0*
+     -    (Alfas*Cpl4*LInt326*
+     -      (-3*WProd196*WProd210 + 3*WProd197*WProd210 + 
+     -        3*WProd198*WProd210 + 2*WProd199*WProd210 + 
+     -        2*WProd200*WProd210 - 2*WProd201*WProd210 - 
+     -        4*WProd193*WProd196*WProd212 + 
+     -        4*WProd193*WProd197*WProd212 + 
+     -        4*WProd193*WProd198*WProd212 + 
+     -        2*WProd193*WProd199*WProd212 + 
+     -        2*WProd193*WProd200*WProd212 - 
+     -        2*WProd193*WProd201*WProd212 + 3*WProd196*WProd215 - 
+     -        3*WProd197*WProd215 - 3*WProd198*WProd215 - 
+     -        2*WProd199*WProd215 - 2*WProd200*WProd215 + 
+     -        2*WProd201*WProd215 + 2*WProd196*WProd216 - 
+     -        2*WProd197*WProd216 - 2*WProd198*WProd216 - 
+     -        2*WProd199*WProd216 - 2*WProd200*WProd216 + 
+     -        2*WProd201*WProd216 - 4*WProd193*WProd196*WProd217 + 
+     -        4*WProd193*WProd197*WProd217 + 
+     -        4*WProd193*WProd198*WProd217 + 
+     -        2*WProd193*WProd199*WProd217 + 
+     -        2*WProd193*WProd200*WProd217 - 
+     -        2*WProd193*WProd201*WProd217 + 3*WProd196*WProd218 - 
+     -        3*WProd197*WProd218 - 3*WProd198*WProd218 - 
+     -        2*WProd199*WProd218 - 2*WProd200*WProd218 + 
+     -        2*WProd201*WProd218 + 2*WProd193*WProd196*WProd219 - 
+     -        2*WProd193*WProd197*WProd219 - 
+     -        2*WProd193*WProd198*WProd219)) - 
+     -   2.5141574442188355D0*
+     -    (Alfas*Cpl4*LInt312*
+     -      (-(WProd199*WProd210) - WProd200*WProd210 + 
+     -        WProd201*WProd210 - WProd193*WProd199*WProd212 - 
+     -        WProd193*WProd200*WProd212 + 
+     -        WProd193*WProd201*WProd212 + WProd196*WProd215 - 
+     -        WProd197*WProd215 - WProd198*WProd215 + 
+     -        3*WProd196*WProd216 - 3*WProd197*WProd216 - 
+     -        3*WProd198*WProd216 - 2*WProd199*WProd216 - 
+     -        2*WProd200*WProd216 + 2*WProd201*WProd216 - 
+     -        WProd193*WProd199*WProd217 - 
+     -        WProd193*WProd200*WProd217 + 
+     -        WProd193*WProd201*WProd217 + WProd196*WProd218 - 
+     -        WProd197*WProd218 - WProd198*WProd218 - 
+     -        WProd193*WProd196*WProd219 + 
+     -        WProd193*WProd197*WProd219 + 
+     -        WProd193*WProd198*WProd219 + 
+     -        2*WProd193*WProd199*WProd219 + 
+     -        2*WProd193*WProd200*WProd219 - 
+     -        2*WProd193*WProd201*WProd219)) - 
+     -   1.2570787221094177D0*
+     -    (Alfas*Cpl4*LInt313*
+     -      (WProd196*WProd210 - WProd197*WProd210 - 
+     -        WProd198*WProd210 - WProd199*WProd210 - 
+     -        WProd200*WProd210 + WProd201*WProd210 + 
+     -        WProd193*WProd196*WProd212 - 
+     -        WProd193*WProd197*WProd212 - 
+     -        WProd193*WProd198*WProd212 - 
+     -        WProd193*WProd199*WProd212 - 
+     -        WProd193*WProd200*WProd212 + 
+     -        WProd193*WProd201*WProd212 + 2*WProd196*WProd216 - 
+     -        2*WProd197*WProd216 - 2*WProd198*WProd216 - 
+     -        2*WProd199*WProd216 - 2*WProd200*WProd216 + 
+     -        2*WProd201*WProd216 + WProd193*WProd196*WProd217 - 
+     -        WProd193*WProd197*WProd217 - 
+     -        WProd193*WProd198*WProd217 - 
+     -        WProd193*WProd199*WProd217 - 
+     -        WProd193*WProd200*WProd217 + 
+     -        WProd193*WProd201*WProd217 + WProd196*WProd218 - 
+     -        WProd197*WProd218 - WProd198*WProd218 - 
+     -        2*WProd193*WProd196*WProd219 + 
+     -        2*WProd193*WProd197*WProd219 + 
+     -        2*WProd193*WProd198*WProd219 + 
+     -        2*WProd193*WProd199*WProd219 + 
+     -        2*WProd193*WProd200*WProd219 - 
+     -        2*WProd193*WProd201*WProd219)) - 
+     -   1.2570787221094177D0*
+     -    (Alfas*Cpl4*LInt315*
+     -      (WProd196*WProd216 - WProd197*WProd216 - 
+     -        WProd198*WProd216 - WProd199*WProd216 - 
+     -        WProd200*WProd216 + WProd201*WProd216 - 
+     -        2*WProd193*WProd196*WProd219 + 
+     -        2*WProd193*WProd197*WProd219 + 
+     -        2*WProd193*WProd198*WProd219 + 
+     -        WProd193*WProd199*WProd219 + 
+     -        WProd193*WProd200*WProd219 - 
+     -        WProd193*WProd201*WProd219)) - 
+     -   2.5141574442188355D0*
+     -    (Alfas*Cpl4*LInt314*
+     -      (WProd199*WProd216 + WProd200*WProd216 - 
+     -        WProd201*WProd216 + WProd193*WProd196*WProd219 - 
+     -        WProd193*WProd197*WProd219 - 
+     -        WProd193*WProd198*WProd219 - 
+     -        WProd193*WProd199*WProd219 - 
+     -        WProd193*WProd200*WProd219 + 
+     -        WProd193*WProd201*WProd219))
+        tmp1113 = tmp1113 - 
+     -   2.5141574442188355D0*
+     -    (Alfas*Cpl4*LInt335*
+     -      (-2*WProd196*WProd210 + 3*WProd197*WProd210 + 
+     -        3*WProd198*WProd210 + WProd199*WProd210 + 
+     -        WProd200*WProd210 - 2*WProd201*WProd210 - 
+     -        2*WProd193*WProd196*WProd212 + 
+     -        4*WProd193*WProd197*WProd212 + 
+     -        4*WProd193*WProd198*WProd212 + 
+     -        WProd193*WProd199*WProd212 + 
+     -        WProd193*WProd200*WProd212 - 
+     -        2*WProd193*WProd201*WProd212 - 2*WProd207*WProd212 + 
+     -        3*WProd196*WProd215 - 3*WProd197*WProd215 - 
+     -        3*WProd198*WProd215 - 2*WProd199*WProd215 - 
+     -        2*WProd200*WProd215 + 2*WProd201*WProd215 + 
+     -        WProd196*WProd216 - 2*WProd197*WProd216 - 
+     -        2*WProd198*WProd216 - WProd199*WProd216 - 
+     -        WProd200*WProd216 + 2*WProd201*WProd216 - 
+     -        2*WProd193*WProd196*WProd217 + 
+     -        4*WProd193*WProd197*WProd217 + 
+     -        4*WProd193*WProd198*WProd217 + 
+     -        WProd193*WProd199*WProd217 + 
+     -        WProd193*WProd200*WProd217 - 
+     -        2*WProd193*WProd201*WProd217 - 2*WProd207*WProd217 + 
+     -        3*WProd196*WProd218 - 3*WProd197*WProd218 - 
+     -        3*WProd198*WProd218 - 2*WProd199*WProd218 - 
+     -        2*WProd200*WProd218 + 2*WProd201*WProd218 + 
+     -        WProd193*WProd196*WProd219 - 
+     -        2*WProd193*WProd197*WProd219 - 
+     -        2*WProd193*WProd198*WProd219 + 2*WProd207*WProd219))-
+     -     2.5141574442188355D0*
+     -    (Alfas*Cpl4*LInt323*
+     -      (WProd197*WProd210 + WProd198*WProd210 - 
+     -        WProd193*WProd196*WProd212 + 
+     -        2*WProd193*WProd197*WProd212 + 
+     -        2*WProd193*WProd198*WProd212 + 
+     -        WProd193*WProd199*WProd212 + 
+     -        WProd193*WProd200*WProd212 - 
+     -        WProd193*WProd201*WProd212 - 2*WProd207*WProd212 - 
+     -        WProd197*WProd216 - WProd198*WProd216 + 
+     -        WProd199*WProd216 + WProd200*WProd216 + 
+     -        WProd201*WProd216 - WProd193*WProd196*WProd217 + 
+     -        2*WProd193*WProd197*WProd217 + 
+     -        2*WProd193*WProd198*WProd217 + 
+     -        WProd193*WProd199*WProd217 + 
+     -        WProd193*WProd200*WProd217 - 
+     -        WProd193*WProd201*WProd217 - 2*WProd207*WProd217 - 
+     -        WProd197*WProd218 - WProd198*WProd218 + 
+     -        2*WProd193*WProd196*WProd219 - 
+     -        3*WProd193*WProd197*WProd219 - 
+     -        3*WProd193*WProd198*WProd219 - 
+     -        2*WProd193*WProd199*WProd219 - 
+     -        2*WProd193*WProd200*WProd219 + 
+     -        WProd193*WProd201*WProd219 + 3*WProd207*WProd219)) - 
+     -   2.5141574442188355D0*
+     -    (Alfas*Cpl4*LInt337*
+     -      (2*WProd197*WProd210 + 2*WProd198*WProd210 - 
+     -        2*WProd201*WProd210 - WProd193*WProd196*WProd212 + 
+     -        3*WProd193*WProd197*WProd212 + 
+     -        3*WProd193*WProd198*WProd212 + 
+     -        WProd193*WProd199*WProd212 + 
+     -        WProd193*WProd200*WProd212 - 
+     -        2*WProd193*WProd201*WProd212 - 3*WProd207*WProd212 - 
+     -        WProd193*WProd196*WProd217 + 
+     -        3*WProd193*WProd197*WProd217 + 
+     -        3*WProd193*WProd198*WProd217 + 
+     -        WProd193*WProd199*WProd217 + 
+     -        WProd193*WProd200*WProd217 - 
+     -        2*WProd193*WProd201*WProd217 - 3*WProd207*WProd217 - 
+     -        2*WProd197*WProd218 - 2*WProd198*WProd218 + 
+     -        2*WProd201*WProd218 + WProd193*WProd196*WProd219 - 
+     -        3*WProd193*WProd197*WProd219 - 
+     -        3*WProd193*WProd198*WProd219 - 
+     -        WProd193*WProd199*WProd219 - 
+     -        WProd193*WProd200*WProd219 + 
+     -        2*WProd193*WProd201*WProd219 + 3*WProd207*WProd219))-
+     -     1.2570787221094177D0*
+     -    (Alfas*Cpl4*LInt322*
+     -      (WProd207*WProd212 + WProd207*WProd217 - 
+     -        WProd208*WProd219)) + 
+     -   1.2570787221094177D0*
+     -    (Alfas*Cpl4*LInt332*
+     -      (-(WProd197*WProd210) - WProd198*WProd210 + 
+     -        WProd201*WProd210 - WProd193*WProd196*WProd212 + 
+     -        WProd193*WProd199*WProd212 + 
+     -        WProd193*WProd200*WProd212 + WProd207*WProd212 + 
+     -        WProd208*WProd212 - WProd199*WProd215 - 
+     -        WProd200*WProd215 - WProd193*WProd196*WProd217 + 
+     -        WProd193*WProd199*WProd217 + 
+     -        WProd193*WProd200*WProd217 + WProd207*WProd217 + 
+     -        WProd208*WProd217 - WProd199*WProd218 - 
+     -        WProd200*WProd218 + WProd208*WProd219)) + 
+     -   1.2570787221094177D0*
+     -    (Alfas*Cpl4*LInt338*
+     -      (-(WProd197*WProd210) - WProd198*WProd210 - 
+     -        WProd199*WProd210 - WProd200*WProd210 + 
+     -        WProd201*WProd210 - WProd193*WProd196*WProd212 + 
+     -        WProd193*WProd199*WProd212 + 
+     -        WProd193*WProd200*WProd212 - 
+     -        WProd193*WProd201*WProd212 + WProd207*WProd212 - 
+     -        WProd199*WProd216 - WProd200*WProd216 - 
+     -        WProd193*WProd196*WProd217 + 
+     -        WProd193*WProd199*WProd217 + 
+     -        WProd193*WProd200*WProd217 - 
+     -        WProd193*WProd201*WProd217 + WProd207*WProd217 + 
+     -        WProd193*WProd199*WProd219 + 
+     -        WProd193*WProd200*WProd219 + WProd208*WProd219))
+        tmp1113 = tmp1113 + 
+     -   1.2570787221094177D0*
+     -    (Alfas*Cpl4*LInt336*
+     -      (-(WProd196*WProd210) - WProd199*WProd210 - 
+     -        WProd200*WProd210 + WProd201*WProd210 - 
+     -        WProd193*WProd197*WProd212 - 
+     -        WProd193*WProd198*WProd212 - 
+     -        WProd193*WProd199*WProd212 - 
+     -        WProd193*WProd200*WProd212 + 
+     -        WProd193*WProd201*WProd212 + WProd207*WProd212 + 
+     -        WProd196*WProd215 - WProd197*WProd215 - 
+     -        WProd198*WProd215 - WProd199*WProd216 - 
+     -        WProd200*WProd216 - WProd193*WProd197*WProd217 - 
+     -        WProd193*WProd198*WProd217 - 
+     -        WProd193*WProd199*WProd217 - 
+     -        WProd193*WProd200*WProd217 + 
+     -        WProd193*WProd201*WProd217 + WProd207*WProd217 + 
+     -        3*WProd196*WProd218 - 3*WProd197*WProd218 - 
+     -        3*WProd198*WProd218 - 2*WProd199*WProd218 - 
+     -        2*WProd200*WProd218 + 2*WProd201*WProd218 + 
+     -        WProd193*WProd199*WProd219 + 
+     -        WProd193*WProd200*WProd219 + WProd208*WProd219)) + 
+     -   1.2570787221094177D0*
+     -    (Alfas*Cpl4*LInt324*
+     -      (-(WProd197*WProd210) - WProd198*WProd210 - 
+     -        WProd199*WProd210 - WProd200*WProd210 + 
+     -        WProd201*WProd210 + WProd193*WProd196*WProd212 - 
+     -        2*WProd193*WProd197*WProd212 - 
+     -        2*WProd193*WProd198*WProd212 - 
+     -        WProd193*WProd199*WProd212 - 
+     -        WProd193*WProd200*WProd212 + 
+     -        WProd193*WProd201*WProd212 + WProd207*WProd212 - 
+     -        WProd196*WProd216 + WProd197*WProd216 + 
+     -        WProd198*WProd216 - WProd201*WProd216 + 
+     -        WProd193*WProd196*WProd217 - 
+     -        2*WProd193*WProd197*WProd217 - 
+     -        2*WProd193*WProd198*WProd217 - 
+     -        WProd193*WProd199*WProd217 - 
+     -        WProd193*WProd200*WProd217 + 
+     -        WProd193*WProd201*WProd217 + WProd207*WProd217 + 
+     -        2*WProd193*WProd199*WProd219 + 
+     -        2*WProd193*WProd200*WProd219 - 
+     -        WProd193*WProd201*WProd219 + WProd208*WProd219)) + 
+     -   2.5141574442188355D0*
+     -    (Alfas*Cpl4*LInt318*
+     -      (-(WProd197*WProd210) - WProd198*WProd210 - 
+     -        WProd199*WProd210 - WProd200*WProd210 + 
+     -        WProd201*WProd210 + WProd193*WProd196*WProd212 - 
+     -        2*WProd193*WProd197*WProd212 - 
+     -        2*WProd193*WProd198*WProd212 - 
+     -        WProd193*WProd199*WProd212 - 
+     -        WProd193*WProd200*WProd212 + 
+     -        WProd193*WProd201*WProd212 + WProd207*WProd212 - 
+     -        WProd196*WProd216 + WProd197*WProd216 + 
+     -        WProd198*WProd216 - WProd201*WProd216 + 
+     -        WProd193*WProd196*WProd217 - 
+     -        2*WProd193*WProd197*WProd217 - 
+     -        2*WProd193*WProd198*WProd217 - 
+     -        WProd193*WProd199*WProd217 - 
+     -        WProd193*WProd200*WProd217 + 
+     -        WProd193*WProd201*WProd217 + WProd207*WProd217 - 
+     -        3*WProd193*WProd196*WProd219 + 
+     -        3*WProd193*WProd197*WProd219 + 
+     -        3*WProd193*WProd198*WProd219 + 
+     -        2*WProd193*WProd199*WProd219 + 
+     -        2*WProd193*WProd200*WProd219 - 
+     -        WProd193*WProd201*WProd219 + WProd208*WProd219)) - 
+     -   2.5141574442188355D0*
+     -    (Alfas*Cpl4*LInt321*
+     -      (-(WProd207*WProd212) - WProd207*WProd217 + 
+     -        2*WProd207*WProd219 + WProd208*WProd219)) - 
+     -   2.5141574442188355D0*
+     -    (Alfas*Cpl4*LInt331*
+     -      (-(WProd196*WProd210) + 2*WProd197*WProd210 + 
+     -        2*WProd198*WProd210 + WProd199*WProd210 + 
+     -        WProd200*WProd210 - 2*WProd201*WProd210 - 
+     -        4*WProd193*WProd196*WProd212 + 
+     -        6*WProd193*WProd197*WProd212 + 
+     -        6*WProd193*WProd198*WProd212 + 
+     -        3*WProd193*WProd199*WProd212 + 
+     -        3*WProd193*WProd200*WProd212 - 
+     -        4*WProd193*WProd201*WProd212 - 3*WProd207*WProd212 - 
+     -        WProd208*WProd212 - 4*WProd193*WProd196*WProd217 + 
+     -        6*WProd193*WProd197*WProd217 + 
+     -        6*WProd193*WProd198*WProd217 + 
+     -        3*WProd193*WProd199*WProd217 + 
+     -        3*WProd193*WProd200*WProd217 - 
+     -        4*WProd193*WProd201*WProd217 - 3*WProd207*WProd217 - 
+     -        WProd208*WProd217 + WProd196*WProd218 - 
+     -        2*WProd197*WProd218 - 2*WProd198*WProd218 - 
+     -        WProd199*WProd218 - WProd200*WProd218 + 
+     -        2*WProd201*WProd218 + 4*WProd193*WProd196*WProd219 - 
+     -        6*WProd193*WProd197*WProd219 - 
+     -        6*WProd193*WProd198*WProd219 - 
+     -        3*WProd193*WProd199*WProd219 - 
+     -        3*WProd193*WProd200*WProd219 + 
+     -        4*WProd193*WProd201*WProd219 + 3*WProd207*WProd219 + 
+     -        WProd208*WProd219)) + 
+     -   1.2570787221094177D0*
+     -    (Alfas*Cpl4*LInt319*
+     -      (WProd196*WProd210 - WProd197*WProd210 - 
+     -        WProd198*WProd210 - WProd199*WProd210 - 
+     -        WProd200*WProd210 + WProd201*WProd210 - 
+     -        WProd196*WProd215 - WProd196*WProd218 - 
+     -        WProd193*WProd196*WProd219 + 
+     -        WProd193*WProd199*WProd219 + 
+     -        WProd193*WProd200*WProd219 + WProd207*WProd219 + 
+     -        2*WProd208*WProd219))
+        tmp1114 = tmp1113/WProd209 + 
+     -   (Prp35**2*(-(1.2570787221094177D0*
+     -           (Alfas*Cpl4*tmp1109*tmp1112)) - 
+     -        2.5141574442188355D0*
+     -         (Alfas*Cpl4*LInt364*tmp1109*tmp1112)))/WProd209 + 
+     -   (Prp31*(1.8856180831641267D0*(Alfas*Cpl4*tmp1111) - 
+     -        3.7712361663282534D0*(Alfas*Cpl4*LInt292*tmp1111) + 
+     -        7.542472332656507D0*(Alfas*Cpl4*LInt294*tmp1111) - 
+     -        3.7712361663282534D0*
+     -         (Alfas*Cpl4*LInt296*tmp1108*tmp1111) - 
+     -        3.7712361663282534D0*
+     -         (Alfas*Cpl4*LInt293*tmp1111*
+     -           (WProd196 - WProd197 - WProd198)) - 
+     -        3.7712361663282534D0*
+     -         (Alfas*Cpl4*LInt295*tmp1111*
+     -           (WProd196 - WProd197 - WProd198))))/WProd209 + 
+     -   (Prp34**2*(0.6285393610547089D0*
+     -         (Alfas*Cpl4*tmp1107*(WProd218 + WProd193*WProd219))+
+     -          1.2570787221094177D0*
+     -         (Alfas*Cpl4*LInt351*tmp1107*
+     -           (WProd218 + WProd193*WProd219))))/WProd209
+        tmp1114 = tmp1114 + 
+     -   (Prp35*(2.5141574442188355D0*(Alfas*Cpl4*tmp1112) - 
+     -        2.5141574442188355D0*(Alfas*Cpl4*LInt341*tmp1112) - 
+     -        2.5141574442188355D0*(Alfas*Cpl4*LInt352*tmp1112) + 
+     -        5.028314888437671D0*(Alfas*Cpl4*LInt354*tmp1112) + 
+     -        5.028314888437671D0*(Alfas*Cpl4*LInt355*tmp1112) - 
+     -        2.5141574442188355D0*
+     -         (Alfas*Cpl4*LInt357*tmp1106*WProd216) - 
+     -        2.5141574442188355D0*
+     -         (Alfas*Cpl4*LInt363*
+     -           (WProd196 - WProd199 - WProd200)*WProd216) - 
+     -        2.5141574442188355D0*
+     -         (Alfas*Cpl4*LInt359*
+     -           (2*WProd196 - WProd197 - WProd198 - 2*WProd199 - 
+     -             2*WProd200 + WProd201)*WProd216) + 
+     -        2.5141574442188355D0*
+     -         (Alfas*Cpl4*LInt360*tmp1109*
+     -           (-WProd210 + WProd215 + WProd218)) + 
+     -        5.028314888437671D0*
+     -         (Alfas*Cpl4*LInt362*tmp1106*WProd193*
+     -           (-WProd212 - WProd217 + WProd219)) + 
+     -        2.5141574442188355D0*
+     -         (Alfas*Cpl4*LInt358*WProd193*
+     -           (WProd196 - WProd199 - WProd200)*
+     -           (-WProd212 - WProd217 + WProd219)) + 
+     -        2.5141574442188355D0*
+     -         (Alfas*Cpl4*LInt353*
+     -           (-(WProd197*WProd210) - WProd198*WProd210 - 
+     -             WProd193*WProd197*WProd212 - 
+     -             WProd193*WProd198*WProd212 + 
+     -             WProd197*WProd215 + WProd198*WProd215 - 
+     -             WProd196*WProd216 + WProd199*WProd216 + 
+     -             WProd200*WProd216 - 
+     -             WProd193*WProd197*WProd217 - 
+     -             WProd193*WProd198*WProd217 + 
+     -             WProd197*WProd218 + WProd198*WProd218 + 
+     -             WProd193*WProd197*WProd219 + 
+     -             WProd193*WProd198*WProd219)) + 
+     -        2.5141574442188355D0*
+     -         (Alfas*Cpl4*LInt356*
+     -           (-(WProd197*WProd210) - WProd198*WProd210 - 
+     -             WProd193*WProd197*WProd212 - 
+     -             WProd193*WProd198*WProd212 + 
+     -             WProd197*WProd215 + WProd198*WProd215 - 
+     -             3*WProd196*WProd216 + 2*WProd197*WProd216 + 
+     -             2*WProd198*WProd216 + 3*WProd199*WProd216 + 
+     -             3*WProd200*WProd216 - 2*WProd201*WProd216 - 
+     -             WProd193*WProd197*WProd217 - 
+     -             WProd193*WProd198*WProd217 + 
+     -             WProd197*WProd218 + WProd198*WProd218 + 
+     -             WProd193*WProd197*WProd219 + 
+     -             WProd193*WProd198*WProd219)) - 
+     -        2.5141574442188355D0*
+     -         (Alfas*Cpl4*LInt361*
+     -           (-(WProd196*WProd210) + 3*WProd197*WProd210 + 
+     -             3*WProd198*WProd210 + WProd199*WProd210 + 
+     -             WProd200*WProd210 - 2*WProd201*WProd210 - 
+     -             WProd193*WProd196*WProd212 + 
+     -             3*WProd193*WProd197*WProd212 + 
+     -             3*WProd193*WProd198*WProd212 + 
+     -             WProd193*WProd199*WProd212 + 
+     -             WProd193*WProd200*WProd212 - 
+     -             2*WProd193*WProd201*WProd212 + 
+     -             WProd196*WProd215 - 3*WProd197*WProd215 - 
+     -             3*WProd198*WProd215 - WProd199*WProd215 - 
+     -             WProd200*WProd215 + 2*WProd201*WProd215 + 
+     -             2*WProd196*WProd216 - 2*WProd199*WProd216 - 
+     -             2*WProd200*WProd216 - 
+     -             WProd193*WProd196*WProd217 + 
+     -             3*WProd193*WProd197*WProd217 + 
+     -             3*WProd193*WProd198*WProd217 + 
+     -             WProd193*WProd199*WProd217 + 
+     -             WProd193*WProd200*WProd217 - 
+     -             2*WProd193*WProd201*WProd217 + 
+     -             WProd196*WProd218 - 3*WProd197*WProd218 - 
+     -             3*WProd198*WProd218 - WProd199*WProd218 - 
+     -             WProd200*WProd218 + 2*WProd201*WProd218 + 
+     -             WProd193*WProd196*WProd219 - 
+     -             3*WProd193*WProd197*WProd219 - 
+     -             3*WProd193*WProd198*WProd219 - 
+     -             WProd193*WProd199*WProd219 - 
+     -             WProd193*WProd200*WProd219 + 
+     -             2*WProd193*WProd201*WProd219))))/WProd209
+        tmp1114 = tmp1114 + 
+     -   (Prp34*(-(1.2570787221094177D0*
+     -           (Alfas*Cpl4*LInt348*
+     -             (WProd197 + WProd198 + WProd199 + WProd200 - 
+     -               WProd201)*(WProd210 + WProd216))) - 
+     -        1.2570787221094177D0*
+     -         (Alfas*Cpl4*LInt350*
+     -           (WProd197 + WProd198 + WProd199 + WProd200 - 
+     -             WProd201)*(WProd210 + WProd216)) + 
+     -        1.2570787221094177D0*
+     -         (Alfas*Cpl4*LInt366*tmp1106*WProd218) - 
+     -        1.2570787221094177D0*
+     -         (Alfas*Cpl4*LInt365*WProd196*WProd218) - 
+     -        1.2570787221094177D0*
+     -         (Alfas*Cpl4*LInt346*tmp1106*WProd193*WProd219) + 
+     -        1.2570787221094177D0*
+     -         (Alfas*Cpl4*LInt347*WProd193*WProd196*WProd219) - 
+     -        1.2570787221094177D0*
+     -         (Alfas*Cpl4*(WProd218 + WProd193*WProd219)) + 
+     -        1.2570787221094177D0*
+     -         (Alfas*Cpl4*LInt340*(WProd218 + WProd193*WProd219))+
+     -          1.2570787221094177D0*
+     -         (Alfas*Cpl4*LInt341*(WProd218 + WProd193*WProd219))-
+     -          2.5141574442188355D0*
+     -         (Alfas*Cpl4*LInt343*(WProd218 + WProd193*WProd219))-
+     -          2.5141574442188355D0*
+     -         (Alfas*Cpl4*LInt344*(WProd218 + WProd193*WProd219))-
+     -          1.2570787221094177D0*
+     -         (Alfas*Cpl4*LInt345*
+     -           (WProd197*WProd210 + WProd198*WProd210 + 
+     -             WProd199*WProd210 + WProd200*WProd210 - 
+     -             WProd201*WProd210 + WProd197*WProd216 + 
+     -             WProd198*WProd216 + WProd199*WProd216 + 
+     -             WProd200*WProd216 - WProd201*WProd216 - 
+     -             4*WProd196*WProd218 + 3*WProd197*WProd218 + 
+     -             3*WProd198*WProd218 + 3*WProd199*WProd218 + 
+     -             3*WProd200*WProd218 - 2*WProd201*WProd218 - 
+     -             4*WProd193*WProd196*WProd219 + 
+     -             3*WProd193*WProd197*WProd219 + 
+     -             3*WProd193*WProd198*WProd219 + 
+     -             3*WProd193*WProd199*WProd219 + 
+     -             3*WProd193*WProd200*WProd219 - 
+     -             2*WProd193*WProd201*WProd219)) - 
+     -        1.2570787221094177D0*
+     -         (Alfas*Cpl4*LInt349*
+     -           (2*WProd197*WProd210 + 2*WProd198*WProd210 + 
+     -             2*WProd199*WProd210 + 2*WProd200*WProd210 - 
+     -             2*WProd201*WProd210 + 2*WProd197*WProd216 + 
+     -             2*WProd198*WProd216 + 2*WProd199*WProd216 + 
+     -             2*WProd200*WProd216 - 2*WProd201*WProd216 - 
+     -             4*WProd196*WProd218 + 2*WProd197*WProd218 + 
+     -             2*WProd198*WProd218 + 2*WProd199*WProd218 + 
+     -             2*WProd200*WProd218 - WProd201*WProd218 - 
+     -             4*WProd193*WProd196*WProd219 + 
+     -             2*WProd193*WProd197*WProd219 + 
+     -             2*WProd193*WProd198*WProd219 + 
+     -             2*WProd193*WProd199*WProd219 + 
+     -             2*WProd193*WProd200*WProd219 - 
+     -             WProd193*WProd201*WProd219)) - 
+     -        1.2570787221094177D0*
+     -         (Alfas*Cpl4*LInt342*
+     -           (WProd197*WProd210 + WProd198*WProd210 + 
+     -             WProd199*WProd210 + WProd200*WProd210 - 
+     -             WProd201*WProd210 + WProd197*WProd216 + 
+     -             WProd198*WProd216 + WProd199*WProd216 + 
+     -             WProd200*WProd216 - WProd201*WProd216 - 
+     -             WProd197*WProd218 - WProd198*WProd218 - 
+     -             WProd199*WProd218 - WProd200*WProd218 + 
+     -             2*WProd201*WProd218 - 
+     -             WProd193*WProd197*WProd219 - 
+     -             WProd193*WProd198*WProd219 - 
+     -             WProd193*WProd199*WProd219 - 
+     -             WProd193*WProd200*WProd219 + 
+     -             2*WProd193*WProd201*WProd219))))/WProd209
+        amp(4,2,5) = Prp33*tmp1114 + 
+     -   (Prp31*Prp32*(-(1.8856180831641267D0*
+     -           (Alfas*Cpl4*tmp1110)) + 
+     -        3.7712361663282534D0*(Alfas*Cpl4*LInt292*tmp1110) - 
+     -        7.542472332656507D0*(Alfas*Cpl4*LInt294*tmp1110) + 
+     -        3.7712361663282534D0*
+     -         (Alfas*Cpl4*LInt296*tmp1108*tmp1110) + 
+     -        3.7712361663282534D0*
+     -         (Alfas*Cpl4*LInt293*tmp1110*
+     -           (WProd196 - WProd197 - WProd198)) + 
+     -        3.7712361663282534D0*
+     -         (Alfas*Cpl4*LInt295*tmp1110*
+     -           (WProd196 - WProd197 - WProd198))))/WProd209
+
+#ifdef DEBUG
+	print *, 'amp(4,2,5) =', amp(4,2,5)
+#endif
+
+      endif
+
+      end
+
+

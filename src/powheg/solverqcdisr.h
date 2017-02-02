@@ -1,9 +1,9 @@
 #ifndef SOLVERQCDISR_H_POFIYGQX
 #define SOLVERQCDISR_H_POFIYGQX
 
-#include <cmath>
-#include <cassert>
 #include <boost/math/tools/roots.hpp>
+#include <cassert>
+#include <cmath>
 
 #include "libconfig.h"
 #include "powheg/alphas.h"
@@ -32,6 +32,9 @@ class LIB_LOCAL SolverQCDISR {
                         log(p2 / x)) -
                    log(u);
         };
+        if (pT2min_ >= p2) {
+            return 0.0;
+        }
 
         double fa = eqn(pT2min_);
         double fb = eqn(p2);

@@ -36,6 +36,9 @@ class Btilde_t {
         return sum_guessed;
     }
 
+    double Born(const Phasespace::Phasespace &ps, double x1, double x2,
+                double x3, double wgt, UserProcess::Data *params);
+
     double Total() const {
         assert(has_virtual);
         if (!has_virtual) {

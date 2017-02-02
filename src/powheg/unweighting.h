@@ -22,12 +22,14 @@ class BornConfig {
         Rejected,
         NegativeBtilde,
         RejectedWithGuessedVirtual,
-        UnderestimatedVirtual
+        UnderestimatedVirtual,
+        RejectedWithBorn
     };
     size_t PDFindex = 0;
     size_t ProcessIndex = 0;
     double btilde = 0.0;
     int n = 0;
+    bool negative = false;
     Status status;
 };
 

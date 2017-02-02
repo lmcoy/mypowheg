@@ -50,7 +50,23 @@ class DataBuffer {
             return 0;
         }
 
+        /**
+         * @bug the size can be too small! Not clear what the problem is.
+         */
         int GetDataSize() const { return pos; }
+
+        void ClearAndAllocate(int s) {
+            assert(s > 0);
+            pos = 0;
+            rpos = 0;
+            if (size != 0) {
+                delete[] data;
+            }
+            size = s;
+            data = new char[s];
+        }
+
+        int Size() const { return size; }
 
     private:
         char * data;

@@ -135,7 +135,7 @@ double scale_factor_3(double m1, double m2, double m3,
 void LIB_LOCAL reshuffle_momenta(LHE::Event *event,
                                  const Powheg::Resonance &resonance,
                                  const UserProcess::Data *userdata) {
-    int mother_id = resonance.ID[0];
+    int mother_id = 2;
     // we have to shift by one because the resonance is already inserted in
     // event.
     int daughter1_id = resonance.ID[0] + 1;

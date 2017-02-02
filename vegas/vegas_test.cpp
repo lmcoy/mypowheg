@@ -1,6 +1,6 @@
-#include <random>
-#include <iostream>
 #include <cmath>
+#include <iostream>
+#include <random>
 
 #include <mpi.h>
 
@@ -66,8 +66,8 @@ int f1(int n, const double *x, const double wgt, void *userdata, int threadid,
 // integral ~ 1.0543373707555682624e-6 (mathematica)
 int f2(int n, const double *x, const double wgt, void *userdata, int threadid,
        double *out) {
-    double w[8] = { 0.3, 0.4, 0.9, 0.1, 0.4, 0.5, 0.2, 0.8 };
-    double c[8] = { 0.1, 0.9, 0.4, 0.5, 0.7, 0.4, 0.8, 0.3 };
+    double w[8] = {0.3, 0.4, 0.9, 0.1, 0.4, 0.5, 0.2, 0.8};
+    double c[8] = {0.1, 0.9, 0.4, 0.5, 0.7, 0.4, 0.8, 0.3};
 
     double ret = 1.0;
     for (int i = 0; i < 8; i++) {
@@ -78,8 +78,8 @@ int f2(int n, const double *x, const double wgt, void *userdata, int threadid,
 }
 
 // integral = 15/34
-int f3(int n, const double *x, const double wgt, void *userdata,
-          int threadid, double * out) {
+int f3(int n, const double *x, const double wgt, void *userdata, int threadid,
+       double *out) {
     *out = 1.0 / pow(1 + 0.2 * x[0] + 0.5 * x[1], 3.0);
     return 0;
 }
@@ -107,6 +107,13 @@ int f6(int n, const double *x, const double wgt, void *userdata, int threadid,
         return -1;
     }
     *out = exp(-25.0 / 144.0 * (pow(x[0] - 0.5, 2) + pow(x[1] - 0.5, 2)));
+    return 0;
+}
+
+// integral = 1
+int f7(int n, const double *x, const double wgt, void *userdata, int threadid,
+       double *out) {
+    *out = 1.0;
     return 0;
 }
 
@@ -235,11 +242,11 @@ TEST(VEGAS, F4) {
 }
 
 struct UserData {
-    int * data;
+    int *data;
 };
 
-void create_msg(void *userdata, int n, char *msg) { 
-    UserData * ud = (UserData*)userdata;
+void create_msg(void *userdata, int n, char *msg) {
+    UserData *ud = (UserData *)userdata;
     printf("%d\n", *ud->data);
     *(ud->data) = 5;
     snprintf(msg, n, "%d", 1);
@@ -268,16 +275,17 @@ TEST(VEGAS, F5) {
     vegas_seed_random(state, seed1);
 
     // setup grid
-    vegas_integrate(state, seed1, f5, (void*)&ud, 6, 10000, 5, verbosity, &tgral, &sd,
-                    &chi2a);
+    vegas_integrate(state, seed1, f5, (void *)&ud, 6, 10000, 5, verbosity,
+                    &tgral, &sd, &chi2a);
 
     // forget integral value
     vegas_reset_int(state);
     int number = 0;
-    vegas_register(state, AFTER_ITERATION, create_msg, process_msg, 100, &number);
+    vegas_register(state, AFTER_ITERATION, create_msg, process_msg, 100,
+                   &number);
     // do the integration with the previously obtained grid
-    vegas_integrate(state, seed2, f5, (void*)&ud, 6, ncall, itmx, verbosity, &tgral,
-                    &sd, &chi2a);
+    vegas_integrate(state, seed2, f5, (void *)&ud, 6, ncall, itmx, verbosity,
+                    &tgral, &sd, &chi2a);
     vegas_free(state);
 
     int rank;
@@ -318,5 +326,35 @@ TEST(VEGAS, F6) {
     if (rank == 0) {
         EXPECT_NEAR(144.0 / 25.0 * M_PI * pow(erf(5.0 / 24.0), 2.0), tgral,
                     5.0 * sd);
+    }
+}
+
+TEST(VEGAS, F7) {
+    double tgral, sd, chi2a;
+    int ncall = 100000; // number of function calls
+    int itmx = 10;      // number of iterations
+    int verbosity = 0;
+
+    RecordProperty("dimensions", 10);
+
+    struct VegasState *state = vegas_new(10, 50);
+    vegas_set_random(state, init_rnd, NULL, get_rnd, free_rnd);
+    vegas_seed_random(state, seed1);
+
+    // setup grid
+    vegas_integrate(state, seed1, f7, NULL, 6, 10000, 5, verbosity, &tgral, &sd,
+                    &chi2a);
+
+    // forget integral value
+    vegas_reset_int(state);
+    // do the integration with the previously obtained grid
+    vegas_integrate(state, seed2, f7, NULL, 6, ncall, itmx, verbosity, &tgral,
+                    &sd, &chi2a);
+    vegas_free(state);
+
+    int rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    if (rank == 0) {
+        EXPECT_NEAR(1.0, tgral, 5.0 * sd);
     }
 }

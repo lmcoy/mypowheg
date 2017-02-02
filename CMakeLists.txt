@@ -24,7 +24,7 @@ if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/.git)
       ERROR_QUIET
       OUTPUT_STRIP_TRAILING_WHITESPACE)
     execute_process(
-      COMMAND ${GIT_EXECUTABLE} diff 
+      COMMAND ${GIT_EXECUTABLE} diff
       WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
       OUTPUT_VARIABLE "DY_GIT_DIFF"
       ERROR_QUIET
@@ -73,6 +73,24 @@ execute_process(COMMAND ${LHAPDF_CONFIG_EXEC} --incdir OUTPUT_VARIABLE LHAPDF_IN
 execute_process(COMMAND ${LHAPDF_CONFIG_EXEC} --libdir OUTPUT_VARIABLE LHAPDF_LIBRARY_DIR OUTPUT_STRIP_TRAILING_WHITESPACE)
 #------------------------------------------------------------------------------------------------------------
 
+#-- COLLIER --------------------------------------------------------------------
+include(ExternalProject)
+ExternalProject_Add(Collier
+PREFIX ${CMAKE_CURRENT_BINARY_DIR}/external/collier
+URL http://www.hepforge.org/archive/collier/collier-1.0.tar.gz
+CMAKE_ARGS -Dstatic=ON
+INSTALL_COMMAND ""
+)
+ExternalProject_Get_Property(Collier source_dir)
+
+add_library(collier STATIC IMPORTED)
+set_property(TARGET collier PROPERTY IMPORTED_LOCATION ${source_dir}/libcollier.a)
+add_dependencies(collier Collier)
+
+set(COLLIER_INCLUDE_DIR ${source_dir}/modules)
+
+#-------------------------------------------------------------------------------
+
 set(CMAKE_CXX_FLAGS "-std=c++11 -Wall")
 set(CMAKE_C_FLAGS "-Wall")
 
@@ -93,7 +111,3 @@ add_subdirectory(vegas)
 add_subdirectory(src)
 add_subdirectory(powheggen)
 add_subdirectory(processes)
-
-
-
-

@@ -121,6 +121,11 @@ File::Error File::GetDouble(const std::string &category, const std::string &key,
                                     category.c_str(), key.c_str());
         return Error::DoubleParser;
     }
+    if (ret == -3) {
+        errormsg_ = Strings::Format("error in %s.%s: %s is not a number.",
+                                    category.c_str(), key.c_str(), str.c_str());
+        return Error::DoubleParser;
+    }
 
     errormsg_ = "";
     return Error::NoError;

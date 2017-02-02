@@ -3,10 +3,10 @@
 #include "config/file.h"
 
 #include "cuts.h"
+#include "matrixelement.h"
 #include "me/parameters_sm.h"
 #include "myhistograms.h"
 #include "scales.h"
-#include "matrixelement.h"
 
 using namespace UserProcess;
 
@@ -99,14 +99,10 @@ int WData::ProcessInit(Config::File &cfile) {
     Process = generateProcesses(RadiationType.QCD, RadiationType.EW);
 
     // add W+ resonance
-    ResonanceISR.pdg = 24;
-    ResonanceISR.ID[0] = 2;
-    ResonanceISR.ID[1] = 3;
+    Resonance.pdg = 24;
+    Resonance.ID[0] = 2;
+    Resonance.ID[1] = 3;
 
-    ResonanceFSR.pdg = 24;
-    ResonanceFSR.ID[0] = 2;
-    ResonanceFSR.ID[1] = 3;
-    ResonanceFSR.ID[2] = 4;
     return 0;
 }
 
@@ -187,12 +183,12 @@ void WData::ProcessPrint() const {
 FKS::ProcessList generateProcesses(bool QCD, bool EW) {
     using R = MatrixElementW::SubProcesses;
     FKS::ProcessList list;
-    double Vud = 0.9748;
-    double Vus = 0.2225;
-    double Vub = 0.0036;
-    double Vcd = 0.2225;
-    double Vcs = 0.9740;
-    double Vcb = 0.041;
+    double Vud = 0.975;
+    double Vus = 0.222;
+    double Vub = 1e-12;
+    double Vcd = 0.222;
+    double Vcs = 0.975;
+    double Vcb = 1e-12;
     double Vud2 = Vud * Vud;
     double Vcd2 = Vcd * Vcd;
     double Vus2 = Vus * Vus;
@@ -200,75 +196,75 @@ FKS::ProcessList generateProcesses(bool QCD, bool EW) {
     double Vub2 = Vub * Vub;
     double Vcb2 = Vcb * Vcb;
     {
-        std::vector<int> pdfs = {
-            { -1, 2, -1, 4, -3, 2, -3, 4, -5, 2, -5, 4 }
-        };
-        std::vector<double> ckm = { { Vud2, Vcd2, Vus2, Vcs2, Vub2, Vcb2 } };
-        FKS::FlavourConfig fl1(R::QXQ_MUPNU, { { -1, 2, -13, 14 } }, pdfs, ckm);
+        std::vector<int> pdfs = {{-1, 2, -1, 4, -3, 2, -3, 4, -5, 2, -5, 4}};
+        std::vector<double> ckm = {{Vud2, Vcd2, Vus2, Vcs2, Vub2, Vcb2}};
+        FKS::ColorFlow color1 = {0, 501, 0, 0};
+        FKS::ColorFlow color2 = {501, 0, 0, 0};
+        FKS::FlavourConfig fl1(R::QXQ_MUPNU, {{-1, 2, -13, 14}}, pdfs, color1,
+                               color2, ckm);
         if (EW) {
             FKS::ResonanceList resonances;
             size_t isr_res = resonances.Add(
-                FKS::Resonance({ { 2, 3 } }, 80.385, 2.085, 2.0 / 3.0));
-            size_t fsr_res = resonances.Add(
-                FKS::Resonance({ { 2, 3, 4 } }, 80.385, 2.085, 1.0));
+                FKS::Resonance({{2, 3}}, 80.385, 2.085, 2.0 / 3.0));
+            size_t fsr_res =
+                resonances.Add(FKS::Resonance({{2, 3, 4}}, 80.385, 2.085, 1.0));
             FKS::RegionList rlist;
             // add all real flavour structures
             rlist.push_back(FKS::Region(4, 2, fsr_res));
             rlist.push_back(FKS::Region(4, 0, isr_res));
-            fl1.AddReal(R::QXQ_MUPNU_A, FKS::Type_t::EW,
-                        { { -1, 2, -13, 14, 22 } }, pdfs, rlist, resonances);
+            fl1.AddRealDY(R::QXQ_MUPNU_A, FKS::Type_t::EW,
+                          {{-1, 2, -13, 14, 22}}, pdfs, rlist, resonances);
         }
         if (QCD) {
             FKS::RegionList rlist;
             // add all real flavour structures
             rlist.push_back(FKS::Region(4, 0));
-            fl1.AddReal(R::QXQ_MUPNU_G, FKS::Type_t::QCD,
-                        { { -1, 2, -13, 14, 21 } }, pdfs, rlist);
-            std::vector<int> pdfs_g2 = { { -1, 0, -1, 0, -3, 0, -3, 0,-5, 0,
-            -5, 0 } };
-            fl1.AddReal(R::QXG_MUPNU_QX, FKS::Type_t::QCD,
-                        { { -1, 21, -13, 14, -2 } }, pdfs_g2, rlist);
-            std::vector<int> pdfs_g1 = { { 0, 2, 0, 4, 0, 2, 0, 4, 0, 2, 0, 4 }
-            };
-            fl1.AddReal(R::GQ_MUPNU_Q, FKS::Type_t::QCD, { { 21, 2, -13, 14, 1 }
-            },
-                        pdfs_g1, rlist);
+            fl1.AddRealDY(R::QXQ_MUPNU_G, FKS::Type_t::QCD,
+                          {{-1, 2, -13, 14, 21}}, pdfs, rlist);
+            std::vector<int> pdfs_g2 = {
+                {-1, 0, -1, 0, -3, 0, -3, 0, -5, 0, -5, 0}};
+            fl1.AddRealDY(R::QXG_MUPNU_QX, FKS::Type_t::QCD,
+                          {{-1, 21, -13, 14, -2}}, pdfs_g2, rlist);
+            std::vector<int> pdfs_g1 = {{0, 2, 0, 4, 0, 2, 0, 4, 0, 2, 0, 4}};
+            fl1.AddRealDY(R::GQ_MUPNU_Q, FKS::Type_t::QCD,
+                          {{21, 2, -13, 14, 1}}, pdfs_g1, rlist);
         }
         list.push_back(fl1);
     }
 
     {
-        std::vector<int> pdfs = {
-	  { 2, -1, 2,-3, 2,-5, 4, -1, 4,-3, 4,-5 }
-        };
-        std::vector<double> ckm = { { Vud2, Vus2, Vub2, Vcd2, Vcs2, Vcb2 } };
-        FKS::FlavourConfig fl1(R::QQX_MUPNU, { { 2, -1, -13, 14 } }, pdfs, ckm);
+        std::vector<int> pdfs = {{2, -1, 2, -3, 2, -5, 4, -1, 4, -3, 4, -5}};
+        std::vector<double> ckm = {{Vud2, Vus2, Vub2, Vcd2, Vcs2, Vcb2}};
+        FKS::ColorFlow color1 = {501, 0, 0, 0};
+        FKS::ColorFlow color2 = {0, 501, 0, 0};
+        FKS::FlavourConfig fl1(R::QQX_MUPNU, {{2, -1, -13, 14}}, pdfs, color1,
+                               color2, ckm);
         if (EW) {
             FKS::ResonanceList resonances;
             size_t isr_res = resonances.Add(
-                FKS::Resonance({ { 2, 3 } }, 80.385, 2.085, 2.0 / 3.0));
-            size_t fsr_res = resonances.Add(
-                FKS::Resonance({ { 2, 3, 4 } }, 80.385, 2.085, 1.0));
+                FKS::Resonance({{2, 3}}, 80.385, 2.085, 2.0 / 3.0));
+            size_t fsr_res =
+                resonances.Add(FKS::Resonance({{2, 3, 4}}, 80.385, 2.085, 1.0));
             FKS::RegionList rlist;
             // add all real flavour structures
             rlist.push_back(FKS::Region(4, 2, fsr_res));
             rlist.push_back(FKS::Region(4, 0, isr_res));
-            fl1.AddReal(R::QQX_MUPNU_A, FKS::Type_t::EW,
-                        { { 2, -1, -13, 14, 22 } }, pdfs, rlist, resonances);
+            fl1.AddRealDY(R::QQX_MUPNU_A, FKS::Type_t::EW,
+                          {{2, -1, -13, 14, 22}}, pdfs, rlist, resonances);
         }
         if (QCD) {
             FKS::RegionList rlist;
             // add all real flavour structures
             rlist.push_back(FKS::Region(4, 0));
-            fl1.AddReal(R::QQX_MUPNU_G, FKS::Type_t::QCD,
-                        { { 2, -1, -13, 14, 21 } }, pdfs, rlist);
-            std::vector<int> pdfs_g2 = {{ 2, 0, 2,0, 2,0, 4, 0, 4,0, 4,0 }};
-            fl1.AddReal(R::QG_MUPNU_Q, FKS::Type_t::QCD,
-                        { { 2, 21, -13, 14, 1 } }, pdfs_g2, rlist);
-            std::vector<int> pdfs_g1 ={{ 0, -1, 0, -3, 0, -5, 0, -1, 0, -3, 0, -5 }};
-            fl1.AddReal(R::GQX_MUPNU_QX, FKS::Type_t::QCD, { { 21, -1, -13, 14,
-            -2 } },
-                        pdfs_g1, rlist);
+            fl1.AddRealDY(R::QQX_MUPNU_G, FKS::Type_t::QCD,
+                          {{2, -1, -13, 14, 21}}, pdfs, rlist);
+            std::vector<int> pdfs_g2 = {{2, 0, 2, 0, 2, 0, 4, 0, 4, 0, 4, 0}};
+            fl1.AddRealDY(R::QG_MUPNU_Q, FKS::Type_t::QCD,
+                          {{2, 21, -13, 14, 1}}, pdfs_g2, rlist);
+            std::vector<int> pdfs_g1 = {
+                {0, -1, 0, -3, 0, -5, 0, -1, 0, -3, 0, -5}};
+            fl1.AddRealDY(R::GQX_MUPNU_QX, FKS::Type_t::QCD,
+                          {{21, -1, -13, 14, -2}}, pdfs_g1, rlist);
         }
         list.push_back(fl1);
     }

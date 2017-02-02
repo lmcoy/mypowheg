@@ -1,9 +1,10 @@
 #include "fks/subtraction.h"
 
-#include "math/math.h"
-#include "fks/ximax.h"
-#include "fks/luminosity.h"
+#include "fks/constants.h"
 #include "fks/limits.h"
+#include "fks/luminosity.h"
+#include "fks/ximax.h"
+#include "math/math.h"
 
 namespace FKS {
 
@@ -20,6 +21,8 @@ SubtractionTerms RealISR2(const PartonLuminosity &lum, const MatrixElement &me,
     double colllimit = 0.0;
     double softcolllimit = 0.0;
     double y_pre = 0.0;
+    constexpr double delta = deltaI;
+    double theta_d = 1.0;
     assert(colldir == 1 || colldir == -1);
     if (colldir == 1) {
         lum_coll = lum.Collinear1;
@@ -28,6 +31,7 @@ SubtractionTerms RealISR2(const PartonLuminosity &lum, const MatrixElement &me,
         colllimit = me.Collinear1;
         softcolllimit = me.SoftCollinear1;
         y_pre = 1.0 / (1.0 - y);
+        theta_d = ((y - 1.0 + delta) > 0.0) ? 1.0 : 0.0;
     } else {
         lum_coll = lum.Collinear2;
         xi_coll = xi.Max_Coll2 * x;
@@ -35,6 +39,7 @@ SubtractionTerms RealISR2(const PartonLuminosity &lum, const MatrixElement &me,
         colllimit = me.Collinear2;
         softcolllimit = me.SoftCollinear2;
         y_pre = 1.0 / (1.0 + y);
+        theta_d = ((-y - 1.0 + delta) > 0.0) ? 1.0 : 0.0;
     }
 
     double lum_born = lum.Born;
@@ -51,8 +56,9 @@ SubtractionTerms RealISR2(const PartonLuminosity &lum, const MatrixElement &me,
     SubtractionTerms terms;
     terms.Real = pre * fks_real;
     terms.Soft = (-pre + pre_end * log(xi.Max)) * fks_soft;
-    terms.Collinear = -pre * fks_coll;
-    terms.SoftCollinear = (pre - pre_end * log(xi_max_coll)) * fks_softcoll;
+    terms.Collinear = -pre * fks_coll * theta_d;
+    terms.SoftCollinear =
+        (pre - pre_end * log(xi_max_coll)) * fks_softcoll * theta_d;
 
     return terms;
 }
@@ -80,7 +86,7 @@ SubtractionTerms RealFSR(double lumi, const MatrixElement &me, double x,
     double G_collinear = J_collinear * me.Collinear1;
     double G_softcoll = J_soft * me.SoftCollinear1;
 
-    double pre = lumi * 1.0 / (1.0 - y) / xi;
+    double pre = lumi * 1.0 / (1.0 - y) / x;
     double pre_end = lumi * log(ximax) / (1.0 - y);
     SubtractionTerms terms;
     terms.Real = pre * G_real;

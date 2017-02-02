@@ -1,12 +1,12 @@
-#include "util/staticmatrix.h"
-#include "phasespace/phasespace.h"
-#include "random/rnd.h"
-#include "process/data.h"
-#include "powheg/generateradiation.h"
-#include "powheg/roverb.h"
-#include "powheg/pickelement.h"
-#include "phasespace/realphasespace.h"
 #include "fks/param.h"
+#include "phasespace/phasespace.h"
+#include "phasespace/realphasespace.h"
+#include "powheg/generateradiation.h"
+#include "powheg/pickelement.h"
+#include "powheg/roverb.h"
+#include "process/data.h"
+#include "random/rnd.h"
+#include "util/staticmatrix.h"
 
 namespace {
 
@@ -20,17 +20,17 @@ template <typename T> class RadiationGenerator {
                                    UserProcess::Data *userdata,
                                    Random::RNG *rng, Powheg::Radiation *rad) {
 
-        Util::StaticMatrix32 roverb(0, 0, 0.0);
+        Util::StaticMatrix128 roverb(0, 0, 0.0);
         double xi_max = T::XiMax(ps, radreg.Region.J);
         double sb = ps.X1 * ps.X2 * ps.S;
-        double kT2tilde = T::PT2Max(xi_max, sb);
+        double kT2tilde = T::PT2Max(ps, xi_max, sb);
         double p2 = kT2tilde;
         double N = radreg.Norm[pdf];
         double minQ = sqrt(userdata->pdf->MinQ2());
         while (true) {
             double pT2 =
                 functions.GenPT2(pT2min_, p2, kT2tilde, xi_max, sb, N, rng);
-            if (pT2 == 0.0) {
+            if (pT2 < pT2min_) {
                 // born like event
                 return Powheg::RadiationType::BORN;
             }
@@ -40,7 +40,9 @@ template <typename T> class RadiationGenerator {
             bool suc =
                 T::GenRadiationVariables(pT2, sb, xi_max, rng, &xi, &y, &phi);
             if (!suc) {
-                fprintf(stderr, "warning: radiation variable out of bounds: xi = %g, y = %g\n", xi, y);
+                fprintf(stderr, "warning: radiation variable out of bounds: xi "
+                                "= %g, y = %g\n",
+                        xi, y);
                 return Powheg::RadiationType::ERADVAR;
             }
             double alpha = functions.GetUpperboundingCoupling(pT2, userdata);
@@ -51,12 +53,13 @@ template <typename T> class RadiationGenerator {
             }
 
             int jfks = radreg.Region.J;
-            assert(jfks >= 0);
+            int ifks = radreg.Region.I;
 
             Phasespace::Phasespace ps_real;
-            Phasespace::GenRealPhasespace(&ps_real, &ps, jfks, xi, y, phi);
+            Phasespace::GenRealPhasespace(&ps_real, &ps, ifks, jfks, xi, y,
+                                          phi);
 
-            Util::StaticMatrix32 lumi_ratio(0, 0, 0);
+            Util::StaticMatrix128 lumi_ratio(0, 0, 0);
             Powheg::LumiRatio(radreg, ps, ps_real, userdata, pdfscale, pdf,
                               &lumi_ratio);
 
@@ -83,7 +86,8 @@ template <typename T> class RadiationGenerator {
             }
 
             double rad_alpha = functions.GetCoupling(pT2, userdata);
-            auto roverb = Powheg::RoverB(B, radreg, ps, ps_real, rad_alpha, userdata);
+            auto roverb =
+                Powheg::RoverB(B, radreg, ps, ps_real, rad_alpha, userdata);
 
             double sum = 0.0;
             for (int i = 0; i < lumi_ratio.Cols(); i++) {
@@ -91,11 +95,13 @@ template <typename T> class RadiationGenerator {
                 sum += L * roverb[i];
             }
             if (sum / U > 1.0) {
-                fprintf(stderr, "warning: wrong norm for upper bounding "
-                                "function: radreg: i = %d j = %d, ",
-                        radreg.Region.I, radreg.Region.J);
-                fprintf(stderr, "Norm = %g, ", N);
-                fprintf(stderr, "(would need Norm >= %g)\n", N * sum / U);
+                if (userdata->Verbose > 0) {
+                    fprintf(stderr, "warning: wrong norm for upper bounding "
+                                    "function: radreg: i = %d j = %d, ",
+                            radreg.Region.I, radreg.Region.J);
+                    fprintf(stderr, "Norm = %g, ", N);
+                    fprintf(stderr, "(would need Norm >= %g)\n", N * sum / U);
+                }
                 return Powheg::RadiationType::ENORM;
             }
             if (rng->Random() < sum / U) {
@@ -103,12 +109,14 @@ template <typename T> class RadiationGenerator {
                 rad->y = y;
                 rad->phi = phi;
                 rad->kT2 = pT2;
-                double prob[8] = { 0.0 };
+                double prob[Powheg::MaxR] = {0.0};
+                assert(lumi_ratio.Cols() <= Powheg::MaxR);
                 for (int i = 0; i < lumi_ratio.Cols(); i++) {
                     prob[i] = lumi_ratio.Get(pdf, i) * roverb[i];
                 }
                 int rflv = pick_element(lumi_ratio.Cols(), prob, rng->Random());
                 rad->j = radreg.Region.J;
+                rad->i = radreg.Region.I;
                 rad->Real = radreg.RealFlavour[rflv];
 
                 return Powheg::RadiationType::REAL;

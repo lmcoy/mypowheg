@@ -13,6 +13,16 @@ BornConfig Powheg::unweighting(const Phasespace::Phasespace &ps, double x1,
                                UserProcess::Data *userdata) {
     BornConfig bconfig;
     Btilde_t btilde;
+    if (userdata->BornUnweighting) {
+        double born = btilde.Born(ps, x1, x2, x3, wgt, userdata);
+        double MaxBorn = userdata->BtildeState.MaxBorn;
+        double r = userdata->rng.Random();
+        if (born < r * MaxBorn) {
+            // reject
+            bconfig.status = BornConfig::Status::RejectedWithBorn;
+            return bconfig;
+        }
+    }
     btilde.CalcWOVirtual(ps, x1, x2, x3, wgt, userdata);
     double totg = -1.0;
     if (userdata->Unweighting.GuessVirtual) {
@@ -36,6 +46,12 @@ BornConfig Powheg::unweighting(const Phasespace::Phasespace &ps, double x1,
     }
 
     bconfig.btilde = tot;
+    if (userdata->NegativeEvents && bconfig.btilde < 0.0) {
+        // make btilde positive and use Max for unweighting
+        bconfig.btilde *= -1.0;
+        tot *= -1.0;
+        bconfig.negative = true;
+    }
     if (tot < 0.0) {
         bconfig.status = BornConfig::Status::NegativeBtilde;
         return bconfig;

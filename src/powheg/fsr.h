@@ -16,7 +16,7 @@ class LIB_LOCAL FSR {
         return 1 - Mrec2 / s;
     }
 
-    static double PT2Max(double ximax, double s) {
+    static double PT2Max(const Phasespace::Phasespace &ps_born, double ximax, double s) {
         return ximax * ximax * s;
     }
 

@@ -12,7 +12,7 @@ class IntegralTransformation {
 };
 typedef std::shared_ptr<IntegralTransformation> IntegralTransformationPtr;
 
-class NoTransformation {
+class NoTransformation : public IntegralTransformation {
   public:
     virtual double Transform(int n, const double *x_in, double *x_out,
                              UserProcess::Data *userdata) {

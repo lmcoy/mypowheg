@@ -12,9 +12,14 @@ struct Run {
     int Number = 0;
     std::vector<std::array<double, FKS::RadiationRegion::NPDF> > Norms;
     double Maximum = 0.0;
+    double MaximumBorn = 0.0;
     double MaximumVoverB = 0.0;
     double XSec = 0.0;
     double XSecErr = 0.0;
+    double XSecBorn = 0.0;
+    double XSecErrBorn = 0.0;
+    double IntGridSetup = 1.0;
+    double IntGridSetupErr = 0.0;
     bool Write(const char *filename) {
         std::ofstream out(filename);
         if (!out) {
@@ -33,9 +38,14 @@ struct Run {
             out << "\n";
         }
         out << Maximum << "\n";
+        out << MaximumBorn << "\n";
         out << MaximumVoverB << "\n";
         out << XSec << "\n";
         out << XSecErr << "\n";
+        out << XSecBorn << "\n";
+        out << XSecErrBorn << "\n";
+        out << IntGridSetup << "\n";
+        out << IntGridSetupErr << "\n";
 
         return true;
     }
@@ -69,11 +79,21 @@ struct Run {
         std::getline(in, line);
         Strings::ParseDouble(line, &Maximum);
         std::getline(in, line);
+        Strings::ParseDouble(line, &MaximumBorn);
+        std::getline(in, line);
         Strings::ParseDouble(line, &MaximumVoverB);
         std::getline(in, line);
         Strings::ParseDouble(line, &XSec);
         std::getline(in, line);
         Strings::ParseDouble(line, &XSecErr);
+        std::getline(in, line);
+        Strings::ParseDouble(line, &XSecBorn);
+        std::getline(in, line);
+        Strings::ParseDouble(line, &XSecErrBorn);
+        std::getline(in, line);
+        Strings::ParseDouble(line, &IntGridSetup);
+        std::getline(in, line);
+        Strings::ParseDouble(line, &IntGridSetupErr);
         return true;
     }
 };

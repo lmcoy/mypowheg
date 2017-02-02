@@ -1,6 +1,9 @@
 #ifndef HISTOGRAMS_H
 #define HISTOGRAMS_H
 
+#include <vector>
+#include <string>
+
 #include "phasespace/phasespace.h"
 #include "util/histogram.h"
 #include "util/databuffer.h"
@@ -9,10 +12,11 @@ class Histograms {
   public:
     explicit Histograms(int n) : initialized_(0) {
         n_ = n;
-        swgt_ = 0.0;
         hists_ = new Util::Histogram *[n_];
+        names.reserve(n);
         for (int i = 0; i < n_; ++i) {
             hists_[i] = 0;
+            names.push_back(std::string(""));
         }
     }
 
@@ -56,7 +60,6 @@ class Histograms {
             return false;
         }
 
-        hists_[n]->Scale(1.0 / swgt_);
         hists_[n]->WriteToFile(filename, norm);
         return true;
     }
@@ -70,8 +73,7 @@ class Histograms {
             assert(0);
             return false;
         }
-        assert(swgt_ != 0.0);
-        hists_[n]->WriteToStreamScaled(ostr, norm, 1.0 / swgt_);
+        hists_[n]->WriteToStreamScaled(ostr, norm, 1.0);
         return true;
     }
 
@@ -110,16 +112,11 @@ class Histograms {
         }
     }
 
-    virtual double Swgt() const { return swgt_; }
-    virtual void SetSwgt(double s) { swgt_ = s; }
-    virtual void AddWgt(double w) { swgt_ += w; }
-
     virtual void InitFrom(const Histograms &h) {
         if (n_ != h.n_) {
             return;
         }
         assert(h.IsInit() == true);
-        swgt_ = h.swgt_;
         initialized_ = h.initialized_;
         for (int i = 0; i < n_; ++i) {
             Init1D(i, h.hists_[i]->N(), h.hists_[i]->GetXMin(),
@@ -131,7 +128,6 @@ class Histograms {
         for (int i = 0; i < n_; ++i) {
             hists_[i]->Reset();
         }
-        swgt_ = 0.0;
     }
 
     virtual Util::Histogram *GetHist(int n) {
@@ -144,13 +140,23 @@ class Histograms {
         return hists_[n];
     }
 
+    virtual void SetName(int i, const std::string & name) {
+        assert(i >= 0 && i < n_);
+        names[i] = name;
+    }
+
+    virtual std::string GetName(int i) {
+        assert(i >= 0 && i < n_);
+        return names[i];
+    }
+
   protected:
     Util::Histogram **hists_;
+    std::vector<std::string> names;
 
   private:
     int n_;
     uint32_t initialized_;
-    double swgt_;
 };
 
 #endif

@@ -35,56 +35,61 @@ typedef std::array<double, MAXPDF> Result;
  * @param wgt weight of the event
  * @param params process definition
  */
-LIB_PUBLIC Result XSecFullByPDF(const Phasespace::Phasespace &ps, double x1, double x2,
-                     double x3, double wgt, UserProcess::Data *params);
+LIB_PUBLIC Result XSecFullByPDF(const Phasespace::Phasespace &ps, double x1,
+                                double x2, double x3, double wgt,
+                                UserProcess::Data *params);
 /**
  * @brief Born part of XSecFullByPDF()
  */
-LIB_PUBLIC Result XSecBornByPDF(const Phasespace::Phasespace &ps, double x1, double x2,
-                     double x3, double wgt, UserProcess::Data *params);
+LIB_PUBLIC Result XSecBornByPDF(const Phasespace::Phasespace &ps, double x1,
+                                double x2, double x3, double wgt,
+                                UserProcess::Data *params);
 
 /**
  * @brief Real part of XSecFullByPDF()
  */
-LIB_PUBLIC Result XSecRealByPDF(const Phasespace::Phasespace &ps, double x1, double x2,
-                     double x3, double wgt, UserProcess::Data *params);
+LIB_PUBLIC Result XSecRealByPDF(const Phasespace::Phasespace &ps, double x1,
+                                double x2, double x3, double wgt,
+                                UserProcess::Data *params);
 
 /**
  * @brief Virtual part of XSecFullByPDF()
  */
-LIB_PUBLIC Result XSecVirtualByPDF(const Phasespace::Phasespace &ps, double x1, double x2,
-                     double x3, double wgt, UserProcess::Data *params);
+LIB_PUBLIC Result XSecVirtualByPDF(const Phasespace::Phasespace &ps, double x1,
+                                   double x2, double x3, double wgt,
+                                   UserProcess::Data *params);
 
 /**
  * @brief PDF renorm. remnant of XSecFullByPDF()
  */
-LIB_PUBLIC Result XSecRemnantByPDF(const Phasespace::Phasespace &ps, double x1, double x2,
-                     double x3, double wgt, UserProcess::Data *params);
+LIB_PUBLIC Result XSecRemnantByPDF(const Phasespace::Phasespace &ps, double x1,
+                                   double x2, double x3, double wgt,
+                                   UserProcess::Data *params);
 /**
  * @brief XSecFull returns the cross section integrand.
  *
  * XSecFull returns the sum of XSecFullByPDF().
  */
-LIB_PUBLIC int XSecFull(const Phasespace::Phasespace &, double, double, double, double,
-             double *, UserProcess::Data *);
+LIB_PUBLIC int XSecFull(const Phasespace::Phasespace &, double, double, double,
+                        double, double *, UserProcess::Data *);
 
 /**
  * @brief Real part of XSecFull().
  */
-LIB_PUBLIC int XSecReal(const Phasespace::Phasespace &, double, double, double, double,
-             double *, UserProcess::Data *);
+LIB_PUBLIC int XSecReal(const Phasespace::Phasespace &, double, double, double,
+                        double, double *, UserProcess::Data *);
 
 /**
  * @brief Virtual part of XSecFull().
  */
-LIB_PUBLIC int XSecVirtual(const Phasespace::Phasespace &, double, double, double, double,
-                double *, UserProcess::Data *);
+LIB_PUBLIC int XSecVirtual(const Phasespace::Phasespace &, double, double,
+                           double, double, double *, UserProcess::Data *);
 
 /**
  * @brief Born part of XSecFull().
  */
-LIB_PUBLIC int XSecBorn(const Phasespace::Phasespace &, double, double, double, double,
-             double *, UserProcess::Data *);
+LIB_PUBLIC int XSecBorn(const Phasespace::Phasespace &, double, double, double,
+                        double, double *, UserProcess::Data *);
 
 /**
  * @brief Collinear remnant from pdf renormalization of XSecFull()
@@ -95,10 +100,10 @@ LIB_PUBLIC int XSecRemnant(const Phasespace::Phasespace &, double, double,
 /**
  * @brief Virtual part + collinear remnant of XSecFull().
  */
-LIB_PUBLIC int XSecVirtualPlusRemnant(const Phasespace::Phasespace &, double, double,
-                           double, double, double *, UserProcess::Data *);
+LIB_PUBLIC int XSecVirtualPlusRemnant(const Phasespace::Phasespace &, double,
+                                      double, double, double, double *,
+                                      UserProcess::Data *);
 
 } // end namespace FKS
 
 #endif
-

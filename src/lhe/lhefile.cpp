@@ -49,7 +49,7 @@ int File::WriteHeader(std::istream &input, bool xml) {
     return 0;
 }
 
-int File::WriteProcessInfo(double SqrtS, int lhaid,
+int File::WriteProcessInfo(double SqrtS, int lhaid, int weighting,
                            const std::vector<LHE::Process> &plist) {
     if (stage_ != 1) {
         return 2;
@@ -61,7 +61,7 @@ int File::WriteProcessInfo(double SqrtS, int lhaid,
     output_ << beamE << " " << beamE << " ";
     output_ << "0 0 "; // pdf (lhapdf)
     output_ << lhaid << " " << lhaid << " ";
-    output_ << "3 "; // weighting: use every event
+    output_ << weighting << " "; // weighting: use every event
     output_ << N << "\n";
 
     for (const auto &process : plist) {

@@ -2,16 +2,16 @@
 
 #include <cassert>
 
-#include "powheg/radiationgenerator.h"
-#include "powheg/qcdisr.h"
-#include "powheg/qedisr.h"
 #include "powheg/qcdfsr.h"
+#include "powheg/qcdisr.h"
 #include "powheg/qedfsr.h"
+#include "powheg/qedisr.h"
+#include "powheg/radiationgenerator.h"
 
 #include "fks/process.h"
-#include "random/rnd.h"
 #include "phasespace/phasespace.h"
 #include "process/data.h"
+#include "random/rnd.h"
 
 namespace Powheg {
 
@@ -24,10 +24,11 @@ RadiationType GenerateRadiation(int pdf, double B,
                                 Powheg::Radiation *rad) {
 
     RadiationAlphaS alphas(userdata->AlphaS);
-    if (radreg.Region.J == 0) {
+    if (radreg.Region.J < 2) {
         QCDISR qcdisr(alphas);
         RadiationGenerator<QCDISR> generator(pTmin2);
-        return generator.Generate(qcdisr, pdf, B, radreg, ps, userdata, rng, rad);
+        return generator.Generate(qcdisr, pdf, B, radreg, ps, userdata, rng,
+                                  rad);
     }
     QCDFSR qcdfsr(alphas);
     RadiationGenerator<QCDFSR> generator(pTmin2);
@@ -45,10 +46,11 @@ RadiationType GenerateRadiation(int pdf, double B,
                                 UserProcess::Data *userdata, Random::RNG *rng,
                                 Powheg::Radiation *rad) {
 
-    if (radreg.Region.J == 0) {
+    if (radreg.Region.J < 2) {
         QEDISR qedisr;
         RadiationGenerator<QEDISR> generator(pTmin2);
-        return generator.Generate(qedisr, pdf, B, radreg, ps, userdata, rng, rad);
+        return generator.Generate(qedisr, pdf, B, radreg, ps, userdata, rng,
+                                  rad);
     }
     QEDFSR qedfsr;
     RadiationGenerator<QEDFSR> generator(pTmin2);

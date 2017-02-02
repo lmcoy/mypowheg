@@ -1,5 +1,6 @@
 #include "fks/radiationregion.h"
 #include <cmath>
+#include <cinttypes>
 
 #include "util/histogram.h"
 #include "util/databuffer.h"
@@ -44,40 +45,23 @@ void RadiationRegion::ComputeNorm(double Ratio) {
         if (NormHist[i] == 0) {
             break;
         }
-        double started = false;
-        int bins_with_zero = 0;
-        double norm = -1.0;
-        int bmax =
-            static_cast<int>(static_cast<double>(NormHist[i]->N()) * 0.08);
-        double m = 1e-5 * NormHist[i]->GetNumEntries();
         double sum = NormHist[i]->GetUnderflow();
         double N = NormHist[i]->Sum();
-        double n2 = 1e13;
+        double norm = -1.0;
         for (int bin = 0; bin < NormHist[i]->N(); bin++) {
             double y = NormHist[i]->GetBinContent(bin);
             sum += y;
-            if (sum > N * Ratio && n2 > 1e12) {
-                n2 = NormHist[i]->GetXUpper(bin);
-            }
-            if (y < m && started) {
-                bins_with_zero += 1;
-                if (bins_with_zero > bmax) {
-                    norm = NormHist[i]->GetXUpper(bin - bmax);
-                    break;
-                }
-
-            }
-            if (y > 0.0) {
-                started = true;
+            if (sum > N * Ratio) {
+                norm = NormHist[i]->GetXUpper(bin);
+                break;
             }
         }
-        if (norm < 0.0) {
-            norm = 1e13;
-        }
-        norm = std::min(norm, n2);
-        Norm[i] = norm;
         LIB_ASSERT(norm > 0.0,
                    "error: did not find norm for upper bounding function.");
+        if (norm <= 0.0) {
+            norm = 1e13;
+        }
+        Norm[i] = norm;
     }
 }
 
@@ -103,14 +87,14 @@ RadiationRegion::WriteNormHistBinaryToBuffer(Util::DataBuffer *buffer) const {
 bool RadiationRegion::MergeNormHistBinaryFromBuffer(Util::DataBuffer *buffer) {
     uint64_t num = buffer->GetUInt64();
     LIB_ASSERT((uint64_t)NPDF >= num,
-               "NPDF = %lu, but buffer has = %llu histograms", NPDF, num);
+               "NPDF = %lu, but buffer has = %" PRIu64 " histograms", NPDF, num);
     uint64_t num_hists = 0;
     for (uint64_t i = 0; i < NPDF; i++) {
         if(NormHist[i] == 0) break;
         num_hists += 1;
     }
     LIB_ASSERT(num == num_hists,
-               "RadiationRegion has %llu hists, but buffer has %llu", num_hists,
+               "RadiationRegion has %" PRIu64 " hists, but buffer has %" PRIu64, num_hists,
                num);
     for (size_t i = 0; i < num; i++) {
         Util::Histogram h(1, 0, 1);
@@ -163,10 +147,12 @@ double RadiationRegion::SearchNormHistUpperBound(size_t pdf) {
     if (hist->GetNumEntries() == 0) {
         return -1.0;
     }
-    double threshold = 0.001 * hist->GetNumEntries();
+    double threshold = InitThreshold * hist->GetNumEntries();
+    double sum = 0.0;
     for (int bin = hist->N() - 1; bin >= 0; bin--) {
         double y = hist->GetBinContent(bin);
-        if (y > threshold) {
+        sum += y;
+        if (sum > threshold) {
             return hist->GetXUpper(bin);
         }
     }

@@ -1,7 +1,9 @@
 #include "fks/remnants.h"
-#include "fks/splitting.h"
-#include "fks/scales.h"
+
+#include "fks/constants.h"
 #include "fks/luminosity.h"
+#include "fks/scales.h"
+#include "fks/splitting.h"
 #include "math/math.h"
 
 #include <cmath>
@@ -23,9 +25,9 @@ double K_DIS_QED(int realp, int bornp, double xi) {
     }
     if (rf == 'f' && bf == 'f') {
         double Q = Physics::PDG::Charge(realp);
-        double z = 1.0 -xi;
-        double ret = (1.0 + z * z) / (1.0 - z) * (log((1.0 - z) / z) - 0.75) + 2.25 +
-               1.25 * z;
+        double z = 1.0 - xi;
+        double ret = (1.0 + z * z) / (1.0 - z) * (log((1.0 - z) / z) - 0.75) +
+                     2.25 + 1.25 * z;
         return Q * Q * ret;
     }
     assert(0 && "not implemented");
@@ -37,50 +39,44 @@ double K_DIS_QCD(int realp, int bornp, double xi) {
     return 0.0;
 }
 
-enum class T {
-    QCD, QED
-};
+enum class T { QCD, QED };
 
-template <T type>
-double K_DIS(int realp, int bornp, double xi) {
-    switch(type) {
-        case T::QCD:
-            return K_DIS_QCD(realp, bornp, xi);
-        case T::QED:
-            return K_DIS_QED(realp, bornp, xi);
+template <T type> double K_DIS(int realp, int bornp, double xi) {
+    switch (type) {
+    case T::QCD:
+        return K_DIS_QCD(realp, bornp, xi);
+    case T::QED:
+        return K_DIS_QED(realp, bornp, xi);
     }
     return 0.0;
 }
 
-template <T type>
-double PxXi(int r, int b, double xi) {
-    switch(type) {
-        case T::QCD:
-            return FKS::QCD::splittingTimesXi(r, b, xi);
-        case T::QED:
-            return FKS::QED::splittingTimesXi(r, b, xi);
+template <T type> double PxXi(int r, int b, double xi) {
+    switch (type) {
+    case T::QCD:
+        return FKS::QCD::splittingTimesXi(r, b, xi);
+    case T::QED:
+        return FKS::QED::splittingTimesXi(r, b, xi);
     }
     return 0.0;
 }
 
-template <T type>
-double PxXiSoft(int r, int b) {
-    switch(type) {
-        case T::QCD:
-            return FKS::QCD::splittingTimesXiSoft(r, b);
-        case T::QED:
-            return FKS::QED::splittingTimesXiSoft(r, b);
+template <T type> double PxXiSoft(int r, int b) {
+    switch (type) {
+    case T::QCD:
+        return FKS::QCD::splittingTimesXiSoft(r, b);
+    case T::QED:
+        return FKS::QED::splittingTimesXiSoft(r, b);
     }
     return 0.0;
 }
 
-template <T type>
-double Peps(int r, int b, double xi) {
-    switch(type) {
-        case T::QCD:
-            return FKS::QCD::splittingEps(r, b, xi);
-        case T::QED:
-            return FKS::QED::splittingEps(r, b, xi);
+template <T type> double Peps(int r, int b, double xi) {
+    switch (type) {
+    case T::QCD:
+        return FKS::QCD::splittingEps(r, b, xi);
+    case T::QED:
+        return FKS::QED::splittingEps(r, b, xi);
     }
     return 0.0;
 }
@@ -89,16 +85,19 @@ template <T type>
 double remnant(const Scales &scales, const Splitting &sp, double xi,
                double xi_max, double s_b, double alpha,
                const LumRemnants &lumir, double born, PDFRenorm pdfren) {
-
+    constexpr double delta = deltaI;
     int realp = sp.RealPDG;
     int bornp = sp.BornPDG;
     double theta = (xi < xi_max) ? 1.0 : 0.0;
     double splitting = PxXi<type>(realp, bornp, xi);
     double splitting_soft = PxXiSoft<type>(realp, bornp);
-    double plus = 1.0 / xi * (log(s_b / scales.muF / scales.muF / (1.0 - xi)) +
-                              2.0 * log(xi));
+    double plus =
+        1.0 / xi *
+        (log(delta * s_b / scales.muF / scales.muF / (1.0 - xi) / 2.0) +
+         2.0 * log(xi));
     double plus_soft =
-        1.0 / xi * (log(s_b / scales.muF / scales.muF) + 2.0 * log(xi));
+        1.0 / xi *
+        (log(delta * s_b / scales.muF / scales.muF / 2.0) + 2.0 * log(xi));
 
     double ME_rem = lumir.Remnant * born;
     double ME_born = lumir.Born * born;
@@ -112,7 +111,6 @@ double remnant(const Scales &scales, const Splitting &sp, double xi,
     ret *= 1.0 / (2.0 * s_b);
     return ret * alpha / (2.0 * Math::Pi);
 }
-
 }
 
 double FKS::QED::Remnant(const Scales &scales, const Splitting &sp, double xi,

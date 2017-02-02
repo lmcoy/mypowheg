@@ -3,6 +3,7 @@
 // Gamma(3,2,-1)*ProjM(-1,1)
 //
 #include "FFV2_2.h"
+#include "aloha_pow2.h"
 
 void FFV2_2(std::complex<double> F1[], std::complex<double> V3[],
             std::complex<double> COUP, std::complex<double> M2,
@@ -16,8 +17,8 @@ void FFV2_2(std::complex<double> F1[], std::complex<double> V3[],
     P2[1] = -F2[1].real();
     P2[2] = -F2[1].imag();
     P2[3] = -F2[0].imag();
-    denom = COUP / (pow(P2[0], 2) - pow(P2[1], 2) - pow(P2[2], 2) -
-                    pow(P2[3], 2) - pow(M2, 2));
+    denom = COUP /
+            (pow2(P2[0]) - pow2(P2[1]) - pow2(P2[2]) - pow2(P2[3]) - pow2(M2));
     F2[2] = denom * cI * (F1[2] * (P2[0] * (V3[2] + V3[5]) +
                                    (P2[1] * -1. * (V3[3] + cI * (V3[4])) +
                                     (P2[2] * (+cI * (V3[3]) - V3[4]) -

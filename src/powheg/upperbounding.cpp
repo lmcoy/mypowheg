@@ -4,25 +4,27 @@
 
 #include "libconfig.h"
 
-#include "powheg/roverb.h"
-#include "fks/ximax.h"
-#include "fks/process.h"
-#include "fks/sfunctions.h"
 #include "fks/param.h"
-#include "phasespace/phasespace.h"
+#include "fks/process.h"
+#include "fks/radiationregion.h"
+#include "fks/sfunctions.h"
+#include "fks/ximax.h"
 #include "math/math.h"
+#include "phasespace/phasespace.h"
+#include "powheg/alphas.h"
+#include "powheg/roverb.h"
 #include "process/data.h"
 #include "process/matrixelement.h"
-#include "fks/radiationregion.h"
-#include "powheg/alphas.h"
 
 #include "phasespace/realphasespace.h"
 
 namespace {
 
-double xi_from_x1(const Phasespace::Phasespace & ps, int jfks, double x1, double y) {
+double xi_from_x1(const Phasespace::Phasespace &ps, int jfks, double x1,
+                  double y) {
     if (jfks >= 2) {
-        return x1 * FKS::XiMaxFSR(sqrt(ps.X1 * ps.X2 * ps.S), ps.Momenta[jfks].E());
+        return x1 *
+               FKS::XiMaxFSR(sqrt(ps.X1 * ps.X2 * ps.S), ps.Momenta[jfks].E());
     }
     return x1 * FKS::XiMaxISR(ps.X1, ps.X2, y);
 }
@@ -31,17 +33,21 @@ double xi_from_x1(const Phasespace::Phasespace & ps, int jfks, double x1, double
 
 namespace Powheg {
 
-void GetNormForBoundingFcts(FKS::Type_t type, bool init, FKS::RadiationRegion &radregion,
-                  const Phasespace::Phasespace &ps, double x1, double x2,
-                  double x3, UserProcess::Data *userdata) {
+void GetNormForBoundingFcts(FKS::Type_t type, bool init,
+                            FKS::RadiationRegion &radregion,
+                            const Phasespace::Phasespace &ps, double x1,
+                            double x2, double x3, UserProcess::Data *userdata) {
     double y = x2 * 2.0 - 1.0;
-    double xi = xi_from_x1(ps, radregion.Region.J, x1, y);
+    int jfks = radregion.Region.J;
+    int ifks = radregion.Region.I;
+    int mother = (ifks > jfks) ? jfks : ifks;
+    double xi = xi_from_x1(ps, mother, x1, y);
     double phi = x3 * 2.0 * Math::Pi;
 
     double U = 0.0;
-    double alpha = 1.0/132.;
+    double alpha = 1.0 / 132.;
     double scale = userdata->PowhegScales.muF;
-    if(type == FKS::Type_t::QCD) {
+    if (type == FKS::Type_t::QCD) {
         // set alpha_s
         double kT2 = 0.0;
         double s = ps.X1 * ps.X2 * ps.S;
@@ -60,7 +66,7 @@ void GetNormForBoundingFcts(FKS::Type_t type, bool init, FKS::RadiationRegion &r
 
         userdata->Params->SetAlphaS(alpha);
         scale = kT;
-        if(kT < 3.0) {
+        if (kT < 3.0) {
             // if the kT is too small, we get problems because the pdfs have
             // numerical problems with too small scales. We exclude those points
             // from the search for the norm because they are really rare in
@@ -79,7 +85,7 @@ void GetNormForBoundingFcts(FKS::Type_t type, bool init, FKS::RadiationRegion &r
     } else { // FSR
         U = xi * (1.0 - y) / alpha;
     }
-    const auto & fl = radregion.FlavourConfig;
+    const auto &fl = radregion.FlavourConfig;
     auto bme = userdata->MatrixElement->Born(fl->Born.ID, ps,
                                              sqrt(userdata->PowhegScales.Q2),
                                              userdata->Params, false, false);
@@ -94,13 +100,10 @@ void GetNormForBoundingFcts(FKS::Type_t type, bool init, FKS::RadiationRegion &r
         }
     }
 
-    int jfks = radregion.Region.J;
-    assert(jfks >= 0);
-
     Phasespace::Phasespace ps_real;
-    Phasespace::GenRealPhasespace(&ps_real, &ps, jfks, xi, y, phi);
+    Phasespace::GenRealPhasespace(&ps_real, &ps, ifks, jfks, xi, y, phi);
 
-    Util::StaticMatrix32 lumi_ratio(0, 0, 0);
+    Util::StaticMatrix128 lumi_ratio(0, 0, 0);
     LumiRatio(radregion, ps, ps_real, userdata, scale, -1, &lumi_ratio);
 
     auto roverb = RoverB(B, radregion, ps, ps_real, alpha, userdata);

@@ -18,8 +18,8 @@ struct Phasespaces {
     Phasespace::Phasespace Collinear2;
     Phasespace::Phasespace Born;
 
-    void Generate(const Phasespace::Phasespace &ps, int jfks, double xi,
-                  double y, double phi);
+    void Generate(const Phasespace::Phasespace &ps, int ifks, int jfks,
+                  double xi, double y, double phi);
 
     Phasespaces Recombined(FKS::Type_t type, const int *pdgs,
                            const UserProcess::RecombinationParam &recomb) const;

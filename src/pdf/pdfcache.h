@@ -19,7 +19,7 @@ namespace PDF {
 
 class LIB_LOCAL Cache {
   public:
-      Cache(std::shared_ptr<PDF::Interface> p) : pdfi(p) {}
+    Cache(std::shared_ptr<PDF::Interface> p) : pdfi(p) {}
 #ifdef MAP
     double Get(double x, double muF, int flavour) {
         assert(fabs(muF - _muF) < 1e-9 || _muF < 0.0);
@@ -39,6 +39,9 @@ class LIB_LOCAL Cache {
 #elif defined(LIST)
     double Get(double x, double muF, int flavour) {
         assert(fabs(muF - _muF) < 1e-9 || _muF < 0.0);
+        if (flavour == 21) {
+            flavour = 0;
+        }
         assert(flavour >= -5);
         assert(flavour <= 5);
         _muF = muF;
@@ -59,9 +62,7 @@ class LIB_LOCAL Cache {
         return f;
     }
 
-    size_t Len(int flavour) const {
-        return _len[flavour + 5];
-    }
+    size_t Len(int flavour) const { return _len[flavour + 5]; }
 
 #else
     double Get(double x, double muF, int flavour) {
@@ -82,7 +83,7 @@ class LIB_LOCAL Cache {
         double x = -1.0;
         double y = -1.0;
     };
-    size_t _len[11] = { 0 };
+    size_t _len[11] = {0};
     item _cache2[11][20];
 #endif
 };

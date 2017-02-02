@@ -32,6 +32,9 @@ class LIB_LOCAL QCDFSR : public FSR {
                            log(pT2max / x)) -
                    log(u);
         };
+        if (pT2min >= pT2max) {
+            return 0.0;
+        }
 
         double fa = eqn(pT2min);
         double fb = eqn(pT2max);

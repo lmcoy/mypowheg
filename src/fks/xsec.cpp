@@ -1,36 +1,33 @@
 #include "fks/xsec.h"
 
 #include <cassert>
-#include <memory>
 #include <iostream>
+#include <memory>
 
-#include "fks/phasespaces.h"
-#include "phasespace/phasespace.h"
-#include "fks/process.h"
-#include "fks/scales.h"
-#include "pdf/pdfcache.h"
 #include "fks/fks_g.h"
-#include "fks/ximax.h"
-#include "fks/luminosity.h"
-#include "fks/remnants.h"
-#include "fks/virtual.h"
-#include "fks/subtraction.h"
-#include "process/data.h"
-#include "math/math.h"
-#include "process/cuts.h"
-#include "process/matrixelement.h"
-#include "fks/param.h"
 #include "fks/limits.h"
+#include "fks/luminosity.h"
+#include "fks/param.h"
+#include "fks/phasespaces.h"
+#include "fks/process.h"
+#include "fks/remnants.h"
+#include "fks/scales.h"
+#include "fks/subtraction.h"
+#include "fks/virtual.h"
+#include "fks/ximax.h"
+#include "math/math.h"
+#include "pdf/pdfcache.h"
+#include "phasespace/phasespace.h"
+#include "process/cuts.h"
+#include "process/data.h"
+#include "process/matrixelement.h"
 
 namespace {
 using namespace FKS;
 
 const double CrossSectionToPb = 3.8937944929e8;
 
-enum class Type {
-    QED,
-    QCD
-};
+enum class Type { QED, QCD };
 
 struct CutsPassed {
     bool Real;
@@ -39,18 +36,20 @@ struct CutsPassed {
 };
 
 CutsPassed realCuts(const FKS::Phasespaces &PS_recomb_lab,
-                    const UserProcess::ICutsPtr & cuts, int jfks, const int *pdgs_r) {
+                    const UserProcess::ICutsPtr &cuts, int jfks,
+                    const int *pdgs_r) {
     CutsPassed results;
+    int N = PS_recomb_lab.Real.N + 2;
 
     results.Real =
-        cuts->ApplyCuts(5, pdgs_r, PS_recomb_lab.Real.Momenta.data());
+        cuts->ApplyCuts(N, pdgs_r, PS_recomb_lab.Real.Momenta.data());
     results.Collinear1 =
-        cuts->ApplyCuts(5, pdgs_r, PS_recomb_lab.Collinear1.Momenta.data());
+        cuts->ApplyCuts(N, pdgs_r, PS_recomb_lab.Collinear1.Momenta.data());
 
     results.Collinear2 = false;
-    if (jfks == 0) {
+    if (jfks < 2) {
         results.Collinear2 =
-            cuts->ApplyCuts(5, pdgs_r, PS_recomb_lab.Collinear2.Momenta.data());
+            cuts->ApplyCuts(N, pdgs_r, PS_recomb_lab.Collinear2.Momenta.data());
     }
     return results;
 }
@@ -111,12 +110,12 @@ FKS::MatrixElement realME(const FKS::Real_t &real, const FKS::Phasespaces &PS,
         double xi = x * Xi.Max;
         switch (typ) {
         case Type_t::EW:
-            ME.Real = FKS::QED::SxG(real, PS, bme.M2, b, region, xi, y, phi,
-                                    userdata);
+            ME.Real = FKS::QED::SxG(real, PS, bme.M2, b, bme.SpinCorr, region,
+                                    xi, y, phi, userdata);
             break;
         case Type_t::QCD:
-            ME.Real = FKS::QCD::SxG(real, PS, bme.M2, bme.ColorCorr, region, xi,
-                                    y, phi, userdata);
+            ME.Real = FKS::QCD::SxG(real, PS, bme.M2, bme.ColorCorr,
+                                    bme.SpinCorr, region, xi, y, phi, userdata);
             break;
         }
     }
@@ -125,12 +124,13 @@ FKS::MatrixElement realME(const FKS::Real_t &real, const FKS::Phasespaces &PS,
     if (born_passcuts || cutspassed.Collinear1 || cutspassed.Collinear2) {
         switch (typ) {
         case Type_t::EW:
-            lim = FKS::QED::Limits(real, PS, bme.M2, b, region, x, Xi, y, phi,
-                                   userdata);
+            lim = FKS::QED::Limits(real, PS, bme.M2, b, bme.SpinCorr, region, x,
+                                   Xi, y, phi, userdata);
             break;
         case Type_t::QCD:
-            lim = FKS::QCD::Limits(real, PS, bme.M2, bme.ColorCorr, region, x,
-                                   Xi, y, phi, userdata);
+            lim =
+                FKS::QCD::Limits(real, PS, bme.M2, bme.ColorCorr, bme.SpinCorr,
+                                 region, x, Xi, y, phi, userdata);
             break;
         }
     }
@@ -189,36 +189,35 @@ struct Results {
     }
 };
 
-Results realSubtraction(const Phasespace::Phasespace &ps_s,
-                        double s_r, int jfks, const LumiReal &lumi,
+Results realSubtraction(const Phasespace::Phasespace &ps_s, double s_r,
+                        int jfks, const LumiReal &lumi,
                         const FKS::MatrixElement &ME, double x,
                         const FKS::Xi &Xi, double y) {
     Results results;
 
     // multiply only by the born jacobian det. The jacobian for the n+1
-    // particle is applied in RealISR. 
-    double toPB = CrossSectionToPb;
+    // particle is applied in RealISR.
     int i_max = lumi.size();
     double xi = x * Xi.Max;
     for (int i = 0; i < i_max; i++) {
         if (jfks >= 2) {
             FKS::SubtractionTerms terms = FKS::RealFSR(
                 lumi[i].Real, ME, x, Xi.Max, y, ps_s.Momenta[jfks].E(), s_r);
-            results.Real1[i] = toPB * terms.Real;
-            results.Born1[i] = toPB * (terms.Soft + terms.SoftCollinear);
-            results.Coll1[i] = toPB * terms.Collinear;
+            results.Real1[i] = terms.Real;
+            results.Born1[i] = terms.Soft + terms.SoftCollinear;
+            results.Coll1[i] = terms.Collinear;
         } else {
             if (xi > 1e-9 && fabs(y) < 1.0 - 1e-7) {
                 // need this cut to avoid numerical failure of subtraction
                 auto terms1 = FKS::RealISR2(lumi[i], ME, 1, x, Xi, y);
-                results.Real1[i] = toPB * terms1.Real;
-                results.Born1[i] = toPB * (terms1.Soft + terms1.SoftCollinear);
-                results.Coll1[i] = toPB * terms1.Collinear;
+                results.Real1[i] = terms1.Real;
+                results.Born1[i] = terms1.Soft + terms1.SoftCollinear;
+                results.Coll1[i] = terms1.Collinear;
 
                 auto terms2 = FKS::RealISR2(lumi[i], ME, -1, x, Xi, y);
-                results.Real2[i] = toPB * terms2.Real;
-                results.Born2[i] = toPB * (terms2.Soft + terms2.SoftCollinear);
-                results.Coll2[i] = toPB * (terms2.Collinear);
+                results.Real2[i] = terms2.Real;
+                results.Born2[i] = terms2.Soft + terms2.SoftCollinear;
+                results.Coll2[i] = terms2.Collinear;
             }
         }
     }
@@ -227,14 +226,30 @@ Results realSubtraction(const Phasespace::Phasespace &ps_s,
 
 void realFillHists(Histograms *hists, const Results &results, double wgt,
                    const Phasespace::Phasespace &ps_lab,
-                   const FKS::Phasespaces &ps_rec_lab,
-                   bool born_passcuts, const CutsPassed &cutspassed) {
-    double r_born1 = sum_result(results.Born1);
-    double r_born2 = sum_result(results.Born2);
-    double r_real1 = sum_result(results.Real1);
-    double r_real2 = sum_result(results.Real2);
-    double r_coll1 = sum_result(results.Coll1);
-    double r_coll2 = sum_result(results.Coll2);
+                   const FKS::Phasespaces &ps_rec_lab, bool born_passcuts,
+                   const CutsPassed &cutspassed,
+                   const UserProcess::Data *data) {
+    Result result_born1 = results.Born1;
+    Result result_born2 = results.Born2;
+    Result result_real1 = results.Real1;
+    Result result_real2 = results.Real2;
+    Result result_coll1 = results.Coll1;
+    Result result_coll2 = results.Coll2;
+    const auto &scale = data->Process[data->ProcessID].Scales;
+    for (size_t i = 0; i < scale.size(); i++) {
+        result_born1[i] *= scale[i];
+        result_born2[i] *= scale[i];
+        result_real1[i] *= scale[i];
+        result_real2[i] *= scale[i];
+        result_coll1[i] *= scale[i];
+        result_coll2[i] *= scale[i];
+    }
+    double r_born1 = sum_result(result_born1);
+    double r_born2 = sum_result(result_born2);
+    double r_real1 = sum_result(result_real1);
+    double r_real2 = sum_result(result_real2);
+    double r_coll1 = sum_result(result_coll1);
+    double r_coll2 = sum_result(result_coll2);
 
     if (born_passcuts) {
         hists->Fill(&ps_lab, wgt * (r_born1 + r_born2));
@@ -374,11 +389,20 @@ void Integrand::Init(const Phasespace::Phasespace &ps, bool Virtual,
     int id = userdata->Process[proc].Born.ID;
     bool QCD = userdata->Process[proc].QCD & Virtual;
     bool EW = userdata->Process[proc].EW & Virtual;
-    bme = userdata->MatrixElement->Born(id, ps, scales.mu, userdata->Params,
-                                        QCD, EW);
+    if (Virtual) {
+        userdata->UseBornCache = false;
+    }
+    if (userdata->UseBornCache) {
+        bme = userdata->BornCache;
+    } else {
+        bme = userdata->MatrixElement->Born(id, ps, scales.mu, userdata->Params,
+                                            QCD, EW);
+        userdata->BornCache = bme;
+    }
+    userdata->UseBornCache = false;
 }
 
-bool Integrand::PSCuts(const  UserProcess::ICutsPtr & cuts) const {
+bool Integrand::PSCuts(const UserProcess::ICutsPtr &cuts) const {
     int N = ps_lab.N + 2;
     return cuts->ApplyCuts(N, pdgs_b, ps_lab.Momenta.data());
 }
@@ -393,7 +417,14 @@ Result Integrand::Born(const Phasespace::Phasespace &ps, const LumiBorn &lumi,
     for (size_t i = 0; i < lumi.size(); i++) {
         result[i] = result_born * lumi[i];
     }
-    hists->Fill(&ps_lab, wgt * sum_result(result));
+
+    Result result_hist = result;
+    const auto &scale = data->Process[data->ProcessID].Scales;
+    for (size_t i = 0; i < scale.size(); i++) {
+        result_hist[i] *= scale[i] * ps.Jacobian;
+    }
+    
+    hists->Fill(&ps_lab, wgt * sum_result(result_hist));
     return result;
 }
 
@@ -421,7 +452,12 @@ Result Integrand::Virtual(const Phasespace::Phasespace &ps,
     for (size_t i = 0; i < lumi.size(); i++) {
         result[i] = result_v * lumi[i];
     }
-    hists->Fill(&ps_lab, wgt * result_v);
+    Result result_hist = result;
+    const auto &scale = data->Process[data->ProcessID].Scales;
+    for (size_t i = 0; i < scale.size(); i++) {
+        result_hist[i] *= scale[i] * ps.Jacobian;
+    }
+    hists->Fill(&ps_lab, wgt * sum_result(result_hist));
     return result;
 }
 
@@ -435,7 +471,6 @@ Result Integrand::CollRemnant(const Phasespace::Phasespace &ps, double x1,
     double alpha_rem = 0.0;
     int NumXi = userdata->NRemnXi;
     double denom = 1.0 / static_cast<double>(NumXi);
-
 
     int proc_id = userdata->ProcessID;
     const auto &fl = userdata->Process[proc_id];
@@ -502,7 +537,12 @@ Result Integrand::CollRemnant(const Phasespace::Phasespace &ps, double x1,
     for (size_t i = 0; i < result.size(); i++) {
         result[i] *= denom;
     }
-    hists->Fill(&ps_lab, wgt * sum_result(result));
+    Result result_hist = result;
+    const auto &scale = data->Process[data->ProcessID].Scales;
+    for (size_t i = 0; i < scale.size(); i++) {
+        result_hist[i] *= scale[i] * ps.Jacobian;
+    }
+    hists->Fill(&ps_lab, wgt * sum_result(result_hist));
     return result;
 }
 
@@ -536,12 +576,17 @@ Result Integrand::Real(const Phasespace::Phasespace &ps, bool born_passcuts,
                         rflavour.Type == FKS::Type_t::EW) {
                         continue;
                     }
+                    double multiplicity =
+                        static_cast<double>(rflavour.AllFlavours.size());
+                    assert(multiplicity > 0.0);
                     for (const auto &region : rflavour.Regions) {
+                        double w = 4.0 * Math::Pi * denom * CrossSectionToPb *
+                                   multiplicity * ps.Jacobian;
                         Result r =
                             real(ps, userdata, x1_i, y, phi, born_passcuts,
-                                 rflavour, region, denom * wgt);
+                                 rflavour, region, w * wgt);
                         for (size_t k = 0; k < result.size(); k++) {
-                            result[k] += r[k];
+                            result[k] += multiplicity * r[k];
                         }
                     }
                 }
@@ -551,7 +596,7 @@ Result Integrand::Real(const Phasespace::Phasespace &ps, bool born_passcuts,
     for (size_t k = 0; k < result.size(); k++) {
         // the factor 4pi is the jacobian det of the change from y in [-1,1]
         // and phi in [0,2pi) to [0,1].
-        result[k] *= 4.0 * Math::Pi * denom;
+        result[k] *= 4.0 * Math::Pi * denom * CrossSectionToPb;
     }
     return result;
 }
@@ -565,12 +610,12 @@ Result Integrand::real(const Phasespace::Phasespace &ps,
     Histograms *hists = userdata->hists;
     int jfks = region.J;
     int ifks = region.I;
-    assert(ifks == 4);
-    assert(jfks >= 0);
+
     FKS::Xi Xi;
     if (jfks >= 2) {
+        int mother = (ifks > jfks) ? jfks : ifks;
         Xi.Max =
-            FKS::XiMaxFSR(sqrt(ps.X1 * ps.X2 * ps.S), ps.Momenta[jfks].E());
+            FKS::XiMaxFSR(sqrt(ps.X1 * ps.X2 * ps.S), ps.Momenta[mother].E());
     } else {
         Xi.Max = FKS::XiMaxISR(ps.X1, ps.X2, y);
         Xi.Max_Coll1 = FKS::XiMaxCollinearISR(ps.X1, ps.X2, 1);
@@ -581,9 +626,15 @@ Result Integrand::real(const Phasespace::Phasespace &ps,
 
     // generate real phase space
     FKS::Phasespaces PS;
-    PS.Generate(ps, jfks, xi, y, phi);
+    PS.Generate(ps, ifks, jfks, xi, y, phi);
     auto PS_recomb_lab = PS.Recombined(rflavour.Type, pdgs_r, recomb);
-    CutsPassed cutspassed = realCuts(PS_recomb_lab, userdata->cuts, jfks, pdgs_r);
+    CutsPassed cutspassed;
+    cutspassed.Real = true;
+    cutspassed.Collinear1 = true;
+    cutspassed.Collinear2 = (jfks < 2);
+    if (userdata->CutOnReal) {
+        cutspassed = realCuts(PS_recomb_lab, userdata->cuts, jfks, pdgs_r);
+    }
 
     LumiReal lumi;
     if (born_passcuts || cutspassed.Real || cutspassed.Collinear1 ||
@@ -597,11 +648,10 @@ Result Integrand::real(const Phasespace::Phasespace &ps,
                                    cutspassed, born_passcuts, userdata);
 
     double s_r = PS.Real.X1 * PS.Real.X2 * PS.Real.S;
-    Results results =
-        realSubtraction(PS.Soft, s_r, jfks, lumi, ME, x, Xi, y);
+    Results results = realSubtraction(PS.Soft, s_r, jfks, lumi, ME, x, Xi, y);
 
-    realFillHists(hists, results, rwgt, ps_lab, PS_recomb_lab, born_passcuts,
-                  cutspassed);
+    realFillHists(hists, results, rwgt, ps_lab, PS_recomb_lab,
+                  born_passcuts, cutspassed, data);
     return results.Combine();
 }
 
@@ -659,12 +709,15 @@ Result montecarlo_integrand(const Phasespace::Phasespace &ps, double x1,
     Result result;
     result.fill(0.0);
 
+    if (Born) {
+        userdata->UseBornCache = false;
+    }
     Integrand integrand(userdata->pdf);
     integrand.Init(ps, Virtual, wgt, userdata);
 
     bool born_passcuts = integrand.PSCuts(userdata->cuts);
 
-    if (!Real && !born_passcuts) {
+    if (!born_passcuts && (!Real || !userdata->CutOnReal)) {
         return result;
     }
     /*********************************************************************
@@ -686,7 +739,7 @@ Result montecarlo_integrand(const Phasespace::Phasespace &ps, double x1,
             add_result(&result, result_v);
         }
 
-        if(Remnant) {
+        if (Remnant) {
             // collinear remnants
             Result result_c =
                 integrand.CollRemnant(ps, x1, userdata, userdata->hists);
@@ -798,4 +851,3 @@ int XSecVirtualPlusRemnant(const Phasespace::Phasespace &ps, double x1,
 }
 
 } // end namespace FKS
-

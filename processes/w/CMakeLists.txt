@@ -9,6 +9,9 @@ set(SRC main.cpp matrixelement.cpp cuts.cpp wdata.cpp)
 execute_process(COMMAND mpic++ -showme:link OUTPUT_VARIABLE MPI_CXX_LINK OUTPUT_STRIP_TRAILING_WHITESPACE)
 execute_process(COMMAND mpic++ -showme:compile OUTPUT_VARIABLE MPI_CXX_COMPILE OUTPUT_STRIP_TRAILING_WHITESPACE)
 
+# copy config file
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/config.txt DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/)
+
 add_executable(w ${SRC} ${HEADERS})
 set_target_properties(w PROPERTIES COMPILE_FLAGS "${MPI_CXX_COMPILE}")
 target_link_libraries(w mew mypowheg vegas powheggen ${LHAPDF_LIBRARIES} ${MPI_CXX_LINK} ) 

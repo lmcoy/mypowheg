@@ -1,21 +1,22 @@
-#include "generateevents.h" 
+#include "generateevents.h"
 
 #include <iostream>
 #include <map>
 
+#include "fks/param.h"
+#include "fks/xsec.h"
+#include "lhe/event.h"
 #include "phasespace/phasespace.h"
 #include "phasespace/realphasespace.h"
+#include "powheg/generateradiation.h"
+#include "powheg/pickelement.h"
+#include "powheg/reshuffle_momenta.h"
+#include "powheg/resonance.h"
+#include "powheg/unweighting.h"
 #include "process/data.h"
 #include "process/matrixelement.h"
-#include "powheg/pickelement.h"
-#include "powheg/generateradiation.h"
-#include "fks/param.h"
-#include "lhe/event.h"
 #include "random/rnd.h"
-#include "fks/xsec.h"
-#include "powheg/resonance.h"
-#include "powheg/reshuffle_momenta.h"
-#include "powheg/unweighting.h"
+#include "color.h"
 
 #define EVENT_REJECT 1
 #define EVENT_SUCCESS 2
@@ -26,14 +27,12 @@ namespace Powheg {
 
 namespace {
 
-enum class Type {
-    QCD,
-    QED
-};
+enum class Type { QCD, QED };
 
-int GenRadiation(const BornConfig & bornconfig, const Phasespace::Phasespace &ps, double wgt,
-              UserProcess::Data *userdata, Phasespace::Phasespace *ps_out,
-              int nn, int *pdg_out, Radiation *rad_out) {
+int GenRadiation(const BornConfig &bornconfig, const Phasespace::Phasespace &ps,
+                 double wgt, UserProcess::Data *userdata,
+                 Phasespace::Phasespace *ps_out, int nn, int *pdg_out,
+                 Radiation *rad_out) {
     assert(nn >= ps.N + 2);
 
     auto pdf = bornconfig.PDFindex;
@@ -52,11 +51,14 @@ int GenRadiation(const BornConfig & bornconfig, const Phasespace::Phasespace &ps
     int n_used_radreg = 0;
     for (const auto &r : userdata->RadiationRegions) {
         if (fl->Born.ID != r.FlavourConfig->Born.ID) {
-           continue;
-        } 
+            continue;
+        }
         Radiation rad;
         RadiationType type = RadiationType::BORN;
         if (!userdata->RadiatePhoton && r.Type == FKS::Type_t::EW) {
+            continue;
+        }
+        if (!userdata->RadiateQCD && r.Type == FKS::Type_t::QCD) {
             continue;
         }
         n_used_radreg += 1;
@@ -110,7 +112,7 @@ int GenRadiation(const BornConfig & bornconfig, const Phasespace::Phasespace &ps
             pdg_out[1] = 21;
         }
         for (int i = 0; i < ps.N; i++) {
-            pdg_out[i + 2] = fl->Born.Flavours[i + 2];
+            pdg_out[i + 2] = fl->Born.AllFlavours[pdf][i + 2];
         }
         userdata->GenEventStatistics.N_BORN += 1;
         if (userdata->RadiationRegions.size() > 0 && n_used_radreg > 0) {
@@ -123,8 +125,8 @@ int GenRadiation(const BornConfig & bornconfig, const Phasespace::Phasespace &ps
     }
 
     Phasespace::Phasespace ps_real;
-    Phasespace::GenRealPhasespace(&ps_real, &ps, radiation.j, radiation.xi,
-                                  radiation.y, radiation.phi);
+    Phasespace::GenRealPhasespace(&ps_real, &ps, radiation.i, radiation.j,
+                                  radiation.xi, radiation.y, radiation.phi);
     ps_out->SetToLabFromCMS(&ps_real);
     pdg_out[0] = radiation.Real->PDF[pdf][0];
     pdg_out[1] = radiation.Real->PDF[pdf][1];
@@ -134,153 +136,140 @@ int GenRadiation(const BornConfig & bornconfig, const Phasespace::Phasespace &ps
     if (pdg_out[1] == 0) {
         pdg_out[1] = 21;
     }
+    size_t n_r = radiation.Real->AllFlavours.size();
+    int rind = 0;
+    if (n_r > 1) {
+        double rn[n_r];
+        for (size_t i = 0; i < n_r; i++) {
+            rn[i] = 1.0;
+        }
+        rind = pick_element(n_r, rn, userdata->rng.Random());
+    }
     for (int i = 0; i < ps_out->N; i++) {
-        pdg_out[i + 2] = radiation.Real->Flavours[i + 2];
+        pdg_out[i + 2] = radiation.Real->AllFlavours[rind][pdf][i + 2];
     }
     userdata->GenEventStatistics.N_REAL += 1;
     return EVENT_SUCCESS;
 }
 
-void assign_color_drellyan(bool qcd, LHE::Particle *particle, int pdg, int i) {
-    if (qcd) {                          // QCD
-        if (i < 2) {                    // inital state
-            if (pdg >= -5 && pdg < 0) { // initial state qbar
-                particle->Color1 = 0;
-                particle->Color2 = 501;
-                return;
-            }
-            if (pdg > 0 && pdg <= 5) { // initial state q
-                particle->Color1 = 502;
-                particle->Color2 = 0;
-                return;
-            }
-            if (pdg == 21) { // initial state gluon
-                particle->Color1 = 501;
-                particle->Color2 = 502;
-                return;
-            }
-        } else {
-            if (pdg >= -5 && pdg < 0) { // final state qbar
-                particle->Color1 = 0;
-                particle->Color2 = 502;
-                return;
-            }
-            if (pdg > 0 && pdg <= 5) { // final state q
-                particle->Color1 = 501;
-                particle->Color2 = 0;
-                return;
-            }
-            if (pdg == 21) { // final state gluon
-                particle->Color1 = 502;
-                particle->Color2 = 501;
-                return;
-            }
-        }
-    }
-    if (pdg >0 && pdg <= 5) {
-        particle->Color1 = 501;
-        particle->Color2 = 0;
-    }
-    if (pdg >= -5 && pdg < 0) {
-        particle->Color1 = 0;
-        particle->Color2 = 501;
-    }
-}
-
 void make_event(const Phasespace::Phasespace &ps_out, const Radiation &rad,
-                int *pdgs, UserProcess::Data *params) {
-        LHE::Event event;
-        double kT = sqrt(rad.kT2);
-        event.Scale = kT;
-        int N = ps_out.N + 2;
-        if (kT == 0.0) {
-            event.Scale = params->PowhegScales.muF;
-        }
-        event.Alpha = params->Params->alpha;
-        double aS = params->AlphaS->AlphaS(event.Scale * event.Scale);
-        event.AlphaS = aS;
-        event.Weight = 1.0;
-        event.ID = 0;
+                int *pdgs, UserProcess::Data *params,
+                const BornConfig &bornconfig) {
+    LHE::Event event;
+    double kT = sqrt(rad.kT2);
+    event.Scale = kT;
+    int N = ps_out.N + 2;
+    if (kT == 0.0) {
+        event.Scale = params->PowhegScales.muF;
+    }
+    event.Alpha = params->Params->alpha;
+    double aS = params->AlphaS->AlphaS(event.Scale * event.Scale);
+    event.AlphaS = aS;
+    event.Weight = 1.0;
+    if (bornconfig.negative) {
+        event.Weight *= -1.0;
+    }
+    event.Weight *= params->EventWeight;
+    event.ID = 0;
 
-        event.N = N;
-        const Resonance &resonance =
-            (rad.j >= 2) ? params->ResonanceFSR : params->ResonanceISR;
+    event.N = N;
+    Resonance resonance = params->Resonance;
 
-        bool qcd =false;
-        for (int i = 0; i < N; i++) {
-            if(pdgs[i] == 21) {
-                qcd = true;
-            }
-        }
+    int color1[10] = {0};
+    int color2[10] = {0};
+    int pdgs_b[10];
+    auto fl = &params->Process[bornconfig.ProcessIndex];
+    size_t n_born = fl->Born.Flavours.size();
+    assert(n_born <= 10);
+    auto pdf = bornconfig.PDFindex;
+    for(size_t i = 0; i < n_born; i++) {
+        color1[i] = fl->Born.Color[0][i];
+        color2[i] = fl->Born.Color[1][i];
+        pdgs_b[i] = fl->Born.AllFlavours[pdf][i];
+    }
 
-        bool has_resonance = false;
-        for (int i = 0, lhe_i = 0; i < N; i++, lhe_i++) {
-            if (i >= 2 && i == resonance.ID[0]) {
-                lhe_i += 1;
-                event.N += 1;
-                has_resonance = true;
-            }
-            LHE::Particle & particle = event.Particles[lhe_i];
-            particle.PDG= pdgs[i];
-            if (i < 2) {
-                particle.Status = -1;
-            } else {
-                particle.Status = 1;
-                if (i == resonance.ID[0] || i == resonance.ID[1] ||
-                    i == resonance.ID[2]) {
-                    // the actual mother particle is the resonance ID[0].
-                    // However, the LHE counting starts with 1, therefore, we
-                    // have to add +1 to get the correct value.
-                    particle.Mother1 = resonance.ID[0] + 1;
-                    particle.Mother2 = resonance.ID[0] + 1;
-                } else {
-                    particle.Mother1 = 1;
-                    particle.Mother2 = 2;
-                }
-            }
-            particle.Color1 = 0;
-            particle.Color2 = 0;
-            particle.Momentum = ps_out.Momenta[i];
-            // TODO: think of a proper way to introduce color! A method is
-            // explained in the POWHEG paper but this also deals with complex
-            // cases.
-            assign_color_drellyan(qcd, &particle, pdgs[i], i);
-        }
-        if (event.N == N + 1) {
-            int i = resonance.ID[0];
-            int i2 = resonance.ID[1];
-            int i3 = resonance.ID[2];
-            LHE::Particle & particle = event.Particles[i];
-            particle.PDG = resonance.pdg;
-            particle.Mother1 = 1;
-            particle.Mother2 = 2;
-            particle.Status = 2;
-            const Math::FourMomentum &P1 = ps_out.Momenta[i];
-            const Math::FourMomentum &P2 = ps_out.Momenta[i2];
-            particle.Momentum = P1.Plus(P2);
-            if (i3 != 0) {
-                particle.Momentum.Add(ps_out.Momenta[i3]);
-            }
-        }
-        if (has_resonance) {
-            reshuffle_momenta(&event, resonance, params);
-        }
+    Powheg::Color(rad.i, rad.j, pdgs_b, pdgs, color1, color2, rad.y);
 
-        auto ret = params->EventBuffer.Append(event);
-        switch(ret) {
-            case decltype(ret)::SUCCESS:
-                break;
-            case decltype(ret)::FULL:
-                std::cerr << "warning: event buffer full\n";
-                break;
-            case decltype(ret)::MALLOCERROR:
-                std::cerr << "warning: problem in remalloc. event not written "
-                             "to buffer\n";
-                break;
-            case decltype(ret)::INTERNALERROR:
-                std::cerr << "error: internal buffer error\n";
-                exit(1);
+    // write initial state partons
+    for (int i = 0; i < 2; i++) {
+        auto &particle = event.Particles[i];
+        particle.PDG = pdgs[i];
+        particle.Status = -1;
+        particle.Color1 = color1[i];
+        particle.Color2 = color2[i];
+        particle.Momentum = ps_out.Momenta[i];
+    }
+    if (rad.j >= 2) {
+        // test if radiation from resonance daughter
+        int mother = rad.j;
+        int rpar = rad.i;
+        if(rad.i < rad.j) {
+            mother = rad.i;
+            rpar = rad.j;
         }
+        if(mother == resonance.ID[0] || mother == resonance.ID[1]) {
+            resonance.ID[2] = rpar;
+        }
+    }
+    // write resonance
+    int res = 0;
+    bool has_resonance = false;
+    if (resonance.ID[0] != 0) {
+        has_resonance = true;
+        event.N += 1;
+        auto &particle = event.Particles[2];
+        int i = resonance.ID[0];
+        int i2 = resonance.ID[1];
+        int i3 = resonance.ID[2];
+        particle.PDG = resonance.pdg;
+        particle.Status = 2;
+        particle.Mother1 = 1;
+        particle.Mother2 = 1;
+        const Math::FourMomentum &P1 = ps_out.Momenta[i];
+        const Math::FourMomentum &P2 = ps_out.Momenta[i2];
+        particle.Momentum = P1.Plus(P2);
+        if (i3 != 0) {
+            particle.Momentum.Add(ps_out.Momenta[i3]);
+        }
+        res = 1;
+    }
+    // write final state particles
+    for (int i = 2; i < N; i++) {
+        int lhe_index = i + res;
+        auto &particle = event.Particles[lhe_index];
+        particle.PDG = pdgs[i];
+        particle.Status = 1;
+        particle.Color1 = color1[i];
+        particle.Color2 = color2[i];
+        particle.Momentum = ps_out.Momenta[i];
+        if (i == resonance.ID[0] || i== resonance.ID[1] || i == resonance.ID[2] ) {
+                particle.Mother1 = 3;
+                particle.Mother2 = 3;
+        } else {
+                particle.Mother1 = 1;
+                particle.Mother2 = 2;
+        }
+    }
+
+    if (has_resonance) {
+        reshuffle_momenta(&event, resonance, params);
+    }
+
+    auto ret = params->EventBuffer.Append(event);
+    switch (ret) {
+    case decltype(ret)::SUCCESS:
+        break;
+    case decltype(ret)::FULL:
+        std::cerr << "warning: event buffer full\n";
+        break;
+    case decltype(ret)::MALLOCERROR:
+        std::cerr << "warning: problem in remalloc. event not written "
+                     "to buffer\n";
+        break;
+    case decltype(ret)::INTERNALERROR:
+        std::cerr << "error: internal buffer error\n";
+        exit(1);
+    }
 }
 
 } // end namespace
@@ -298,8 +287,14 @@ int GenerateEvents(const Phasespace::Phasespace &ps, double x1, double x2,
         params->GenEventStatistics.N_REJECT += 1;
         *ff = 0.0;
         return -1;
-    } else if (bornconfig.status == BornConfig::Status::RejectedWithGuessedVirtual) {
+    } else if (bornconfig.status ==
+               BornConfig::Status::RejectedWithGuessedVirtual) {
         params->GenEventStatistics.N_REJECTWOVIRTUAL += 1;
+        *ff = 0.0;
+        return -1;
+    } else if (bornconfig.status ==
+               BornConfig::Status::RejectedWithBorn) {
+        params->GenEventStatistics.N_REJECTBORN += 1;
         *ff = 0.0;
         return -1;
     } else if (bornconfig.status == BornConfig::Status::UnderestimatedVirtual) {
@@ -327,10 +322,10 @@ int GenerateEvents(const Phasespace::Phasespace &ps, double x1, double x2,
     int n = 0;
     for (int i = 0; i < bornconfig.n; i++) {
         Radiation rad;
-        int status = Powheg::GenRadiation(bornconfig, ps, wgt, params, &ps_out, 10,
-                                       pdgs, &rad);
+        int status = Powheg::GenRadiation(bornconfig, ps, wgt, params, &ps_out,
+                                          10, pdgs, &rad);
         if (status == EVENT_SUCCESS) {
-            make_event(ps_out, rad, pdgs, params);
+            make_event(ps_out, rad, pdgs, params, bornconfig);
             n += 1;
         }
     }
@@ -353,7 +348,8 @@ int GenerateEvents(const Phasespace::Phasespace &ps, double x1, double x2,
             break;
         }
         // *ff = bornconfig.btilde / wgt;
-        *ff = params->BtildeState.Max / wgt;
+        double neg = bornconfig.negative ? -1.0 : 1.0;
+        *ff = params->BtildeState.Max / wgt * neg;
         return n - 1;
     }
 
