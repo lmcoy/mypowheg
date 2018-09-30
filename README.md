@@ -2,6 +2,11 @@ MyPOWHEG
 ========
 
 POWHEG event generator for QCD and EW corrections.
+A detailed description of the algorithms and methods implemented in this code, as well as, 
+results obtained by using this code can be found in 
+[DOI: 10.18154/RWTH-2017-04899](https://publications.rwth-aachen.de/record/690196). 
+The results are also published in 
+[DOI: 10.1007/JHEP05(2017)090](https://inspirehep.net/record/1503191).
 
 Requirements
 ------------
